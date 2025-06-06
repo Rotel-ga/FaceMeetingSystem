@@ -128,6 +128,30 @@ FaceMeetingServer/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\FaceMeetingServer.dir\build.make CMakeFiles/FaceMeetingServer.dir/build
 .PHONY : FaceMeetingServer/fast
 
+database/database_manager.obj: database/database_manager.cpp.obj
+.PHONY : database/database_manager.obj
+
+# target to build an object file
+database/database_manager.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\FaceMeetingServer.dir\build.make CMakeFiles/FaceMeetingServer.dir/database/database_manager.cpp.obj
+.PHONY : database/database_manager.cpp.obj
+
+database/database_manager.i: database/database_manager.cpp.i
+.PHONY : database/database_manager.i
+
+# target to preprocess a source file
+database/database_manager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\FaceMeetingServer.dir\build.make CMakeFiles/FaceMeetingServer.dir/database/database_manager.cpp.i
+.PHONY : database/database_manager.cpp.i
+
+database/database_manager.s: database/database_manager.cpp.s
+.PHONY : database/database_manager.s
+
+# target to generate assembly for a file
+database/database_manager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\FaceMeetingServer.dir\build.make CMakeFiles/FaceMeetingServer.dir/database/database_manager.cpp.s
+.PHONY : database/database_manager.cpp.s
+
 src/main.obj: src/main.cpp.obj
 .PHONY : src/main.obj
 
@@ -161,6 +185,9 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... FaceMeetingServer
+	@echo ... database/database_manager.obj
+	@echo ... database/database_manager.i
+	@echo ... database/database_manager.s
 	@echo ... src/main.obj
 	@echo ... src/main.i
 	@echo ... src/main.s

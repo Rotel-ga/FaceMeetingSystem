@@ -9,9 +9,10 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # 查找源文件
 file(GLOB SRC_FILES src/*.cpp)
+file(GLOB DB_FILES database/database_manager.cpp)
 
 # 创建可执行文件
-add_executable(${PROJECT_NAME} ${SRC_FILES})
+add_executable(${PROJECT_NAME} ${SRC_FILES} ${DB_FILES})
 
 # 链接库（无需使用 -l 前缀）
 target_link_libraries(${PROJECT_NAME}
@@ -19,4 +20,5 @@ target_link_libraries(${PROJECT_NAME}
     mswsock     # Windows Socket Extensions: AcceptEx 等
     ssl         # OpenSSL
     crypto      # OpenSSL
+    sqlite3     # SQLite3 数据库
 )

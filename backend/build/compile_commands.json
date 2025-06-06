@@ -1,0 +1,14 @@
+[
+{
+  "directory": "D:/Cpp Project/FaceMeetingSystem/backend/build",
+  "command": "D:\\msys64\\mingw64\\bin\\g++.exe  @CMakeFiles/FaceMeetingServer.dir/includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\FaceMeetingServer.dir\\src\\main.cpp.obj -c \"D:\\Cpp Project\\FaceMeetingSystem\\backend\\src\\main.cpp\"",
+  "file": "D:/Cpp Project/FaceMeetingSystem/backend/src/main.cpp",
+  "output": "CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj"
+},
+{
+  "directory": "D:/Cpp Project/FaceMeetingSystem/backend/build",
+  "command": "D:\\msys64\\mingw64\\bin\\g++.exe  @CMakeFiles/FaceMeetingServer.dir/includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\FaceMeetingServer.dir\\database\\database_manager.cpp.obj -c \"D:\\Cpp Project\\FaceMeetingSystem\\backend\\database\\database_manager.cpp\"",
+  "file": "D:/Cpp Project/FaceMeetingSystem/backend/database/database_manager.cpp",
+  "output": "CMakeFiles/FaceMeetingServer.dir/database/database_manager.cpp.obj"
+}
+]

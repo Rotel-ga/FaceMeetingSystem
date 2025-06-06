@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/FaceMeetingServer.dir/database/database_manager.cpp.obj"
+  "CMakeFiles/FaceMeetingServer.dir/database/database_manager.cpp.obj.d"
   "CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj"
   "CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj.d"
   "FaceMeetingServer.exe"

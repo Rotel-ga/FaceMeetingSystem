@@ -84,12 +84,12 @@ clean: CMakeFiles/FaceMeetingServer.dir/clean
 CMakeFiles/FaceMeetingServer.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\FaceMeetingServer.dir\build.make CMakeFiles/FaceMeetingServer.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\FaceMeetingServer.dir\build.make CMakeFiles/FaceMeetingServer.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:\Cpp Project\FaceMeetingSystem\backend\build\CMakeFiles" --progress-num=1,2 "Built target FaceMeetingServer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:\Cpp Project\FaceMeetingSystem\backend\build\CMakeFiles" --progress-num=1,2,3 "Built target FaceMeetingServer"
 .PHONY : CMakeFiles/FaceMeetingServer.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/FaceMeetingServer.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "D:\Cpp Project\FaceMeetingSystem\backend\build\CMakeFiles" 2
+	$(CMAKE_COMMAND) -E cmake_progress_start "D:\Cpp Project\FaceMeetingSystem\backend\build\CMakeFiles" 3
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\Makefile2 CMakeFiles/FaceMeetingServer.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start "D:\Cpp Project\FaceMeetingSystem\backend\build\CMakeFiles" 0
 .PHONY : CMakeFiles/FaceMeetingServer.dir/rule
@@ -101,7 +101,7 @@ FaceMeetingServer: CMakeFiles/FaceMeetingServer.dir/rule
 # codegen rule for target.
 CMakeFiles/FaceMeetingServer.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\FaceMeetingServer.dir\build.make CMakeFiles/FaceMeetingServer.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:\Cpp Project\FaceMeetingSystem\backend\build\CMakeFiles" --progress-num=1,2 "Finished codegen for target FaceMeetingServer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir="D:\Cpp Project\FaceMeetingSystem\backend\build\CMakeFiles" --progress-num=1,2,3 "Finished codegen for target FaceMeetingServer"
 .PHONY : CMakeFiles/FaceMeetingServer.dir/codegen
 
 # clean rule for target.
