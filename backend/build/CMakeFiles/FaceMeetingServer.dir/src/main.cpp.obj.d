@@ -1046,4 +1046,5 @@ CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj: \
  D:/msys64/mingw64/include/c++/15.1.0/bits/this_thread_sleep.h \
  D:/Cpp\ Project/FaceMeetingSystem/backend/database/database_manager.h \
  D:/Cpp\ Project/FaceMeetingSystem/backend/include/sqlite_modern_cpp.h \
- D:/msys64/mingw64/include/sqlite3.h
+ D:/msys64/mingw64/include/sqlite3.h \
+ D:/Cpp\ Project/FaceMeetingSystem/backend/include/cors.h

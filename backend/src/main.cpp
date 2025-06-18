@@ -2,6 +2,7 @@
 #define CROW_DISABLE_SSL
 #include "crow_all.h"
 #include "../database/database_manager.h"
+#include "../include/cors.h"
 #include <memory>
 #include <iostream>
 
@@ -15,12 +16,82 @@ int main()
         db_manager->initialize_tables();
         std::cout << "数据库初始化成功!" << std::endl;
         
-        crow::SimpleApp app;
+        crow::App<CORS> app;
 
         // 基本测试接口
         CROW_ROUTE(app, "/")([](){
             return "Face Meeting System API Server is running!";
         });
+
+
+
+        // 用户登录接口
+        CROW_ROUTE(app, "/api/login").methods("POST"_method)([](const crow::request& req){
+            try {
+                auto body = crow::json::load(req.body);
+                if (!body) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Invalid JSON";
+                    return crow::response(400, error);
+                }
+                
+                if (!body.has("username") || !body.has("password")) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Username and password are required";
+                    return crow::response(400, error);
+                }
+                
+                std::string username = body["username"].s();
+                std::string password = body["password"].s();
+                
+                try {
+                    // 根据用户名查找用户
+                    User user = db_manager->get_user_by_username(username);
+                    
+                    // 验证密码
+                    if (user.password == password) {
+                        // 登录成功
+                        crow::json::wvalue result;
+                        result["success"] = true;
+                        result["message"] = "Login successful";
+                        result["data"]["id"] = user.id;
+                        result["data"]["username"] = user.username;
+                        result["data"]["face_token"] = user.face_token;
+                        
+                        // 根据用户名判断角色（简单实现：admin用户为管理员）
+                        if (username == "admin") {
+                            result["data"]["role"] = "admin";
+                        } else {
+                            result["data"]["role"] = "user";
+                        }
+                        
+                        return crow::response(200, result);
+                    } else {
+                        // 密码错误
+                        crow::json::wvalue error;
+                        error["success"] = false;
+                        error["message"] = "Invalid username or password";
+                        return crow::response(401, error);
+                    }
+                } catch (const std::exception& e) {
+                    // 用户不存在或其他数据库错误
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Invalid username or password";
+                    return crow::response(401, error);
+                }
+                
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = "Internal server error";
+                return crow::response(500, error);
+            }
+        });
+
+
 
         // 获取所有用户
         CROW_ROUTE(app, "/api/users").methods("GET"_method)([](const crow::request& req){
@@ -58,18 +129,125 @@ int main()
                     return crow::response(400, error);
                 }
                 
+                if (!body.has("username") || !body.has("password")) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Username and password are required";
+                    return crow::response(400, error);
+                }
+                
                 std::string username = body["username"].s();
                 std::string password = body["password"].s();
                 std::string face_token = body.has("face_token") ? body["face_token"].s() : std::string();
+                
+                // 检查用户名是否已存在
+                try {
+                    db_manager->get_user_by_username(username);
+                    // 如果没有抛出异常，说明用户已存在
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Username already exists";
+                    return crow::response(409, error);
+                } catch (const std::exception& e) {
+                    // 用户不存在，可以创建
+                }
                 
                 int user_id = db_manager->create_user(username, password, face_token);
                 
                 crow::json::wvalue result;
                 result["success"] = true;
                 result["data"]["id"] = user_id;
+                result["data"]["username"] = username;
                 result["message"] = "User created successfully";
                 
                 return crow::response(201, result);
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
+        // 更新用户
+        CROW_ROUTE(app, "/api/users/<int>").methods("PUT"_method)([](const crow::request& req, int user_id){
+            try {
+                auto body = crow::json::load(req.body);
+                if (!body) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Invalid JSON";
+                    return crow::response(400, error);
+                }
+                
+                if (!body.has("username") || !body.has("password")) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Username and password are required";
+                    return crow::response(400, error);
+                }
+                
+                std::string username = body["username"].s();
+                std::string password = body["password"].s();
+                std::string face_token = body.has("face_token") ? body["face_token"].s() : std::string();
+                
+                // 检查用户是否存在
+                try {
+                    db_manager->get_user_by_id(user_id);
+                } catch (const std::exception& e) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "User not found";
+                    return crow::response(404, error);
+                }
+                
+                bool success = db_manager->update_user(user_id, username, password, face_token);
+                
+                if (success) {
+                    crow::json::wvalue result;
+                    result["success"] = true;
+                    result["message"] = "User updated successfully";
+                    return crow::response(200, result);
+                } else {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Failed to update user";
+                    return crow::response(500, error);
+                }
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
+        // 删除用户
+        CROW_ROUTE(app, "/api/users/<int>").methods("DELETE"_method)([](const crow::request& req, int user_id){
+            try {
+                // 检查用户是否存在
+                try {
+                    db_manager->get_user_by_id(user_id);
+                } catch (const std::exception& e) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "User not found";
+                    return crow::response(404, error);
+                }
+                
+                bool success = db_manager->delete_user(user_id);
+                
+                if (success) {
+                    crow::json::wvalue result;
+                    result["success"] = true;
+                    result["message"] = "User deleted successfully";
+                    return crow::response(200, result);
+                } else {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Failed to delete user";
+                    return crow::response(500, error);
+                }
             } catch (const std::exception& e) {
                 crow::json::wvalue error;
                 error["success"] = false;
