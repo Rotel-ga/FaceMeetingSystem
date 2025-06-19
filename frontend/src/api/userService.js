@@ -34,6 +34,19 @@ export const getUsers = async () => {
 
     const result = await response.json();
     
+    // 返回完整的响应对象，包含success和data字段
+    return result;
+  } catch (error) {
+    console.error('获取用户列表失败:', error);
+    throw error;
+  }
+};
+
+// 获取用户数据数组（兼容旧版本）
+export const getUsersData = async () => {
+  try {
+    const result = await getUsers();
+    
     // 检查响应格式并返回用户数组
     if (result.success && result.data) {
       return result.data;

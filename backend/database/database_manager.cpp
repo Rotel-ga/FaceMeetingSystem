@@ -38,6 +38,7 @@ void DatabaseManager::initialize_tables() {
             time_start TEXT NOT NULL,
             time_end TEXT NOT NULL,
             user_id INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
             FOREIGN KEY (room_id) REFERENCES rooms(id),
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
@@ -195,16 +196,16 @@ bool DatabaseManager::delete_room(int id) {
 
 // 会议操作实现
 int DatabaseManager::create_meeting(int room_id, const std::string& topic, const std::string& time_start, 
-                                   const std::string& time_end, int user_id) {
-    std::string sql = "INSERT INTO meetings (room_id, topic, time_start, time_end, user_id) VALUES (" +
+                      const std::string& time_end, int user_id) {
+    std::string sql = "INSERT INTO meetings (room_id, topic, time_start, time_end, user_id, status) VALUES (" + 
                      std::to_string(room_id) + ", '" + topic + "', '" + time_start + "', '" + 
-                     time_end + "', " + std::to_string(user_id) + ")";
+                     time_end + "', " + std::to_string(user_id) + ", 'pending')";
     db->execute(sql);
     return static_cast<int>(db->last_insert_rowid());
 }
 
 Meeting DatabaseManager::get_meeting_by_id(int id) {
-    std::string sql = "SELECT id, room_id, topic, time_start, time_end, user_id FROM meetings WHERE id = " + std::to_string(id);
+    std::string sql = "SELECT id, room_id, topic, time_start, time_end, user_id, status FROM meetings WHERE id = " + std::to_string(id);
     auto results = db->query(sql);
     
     if (results.empty()) {
@@ -218,11 +219,12 @@ Meeting DatabaseManager::get_meeting_by_id(int id) {
     meeting.time_start = results[0][3];
     meeting.time_end = results[0][4];
     meeting.user_id = std::stoi(results[0][5]);
+    meeting.status = results[0][6];
     return meeting;
 }
 
 std::vector<Meeting> DatabaseManager::get_meetings_by_room(int room_id) {
-    std::string sql = "SELECT id, room_id, topic, time_start, time_end, user_id FROM meetings WHERE room_id = " + std::to_string(room_id);
+    std::string sql = "SELECT id, room_id, topic, time_start, time_end, user_id, status FROM meetings WHERE room_id = " + std::to_string(room_id);
     auto results = db->query(sql);
     
     std::vector<Meeting> meetings;
@@ -234,13 +236,14 @@ std::vector<Meeting> DatabaseManager::get_meetings_by_room(int room_id) {
         meeting.time_start = row[3];
         meeting.time_end = row[4];
         meeting.user_id = std::stoi(row[5]);
+        meeting.status = row[6];
         meetings.push_back(meeting);
     }
     return meetings;
 }
 
 std::vector<Meeting> DatabaseManager::get_meetings_by_user(int user_id) {
-    std::string sql = "SELECT id, room_id, topic, time_start, time_end, user_id FROM meetings WHERE user_id = " + std::to_string(user_id);
+    std::string sql = "SELECT id, room_id, topic, time_start, time_end, user_id, status FROM meetings WHERE user_id = " + std::to_string(user_id);
     auto results = db->query(sql);
     
     std::vector<Meeting> meetings;
@@ -252,13 +255,14 @@ std::vector<Meeting> DatabaseManager::get_meetings_by_user(int user_id) {
         meeting.time_start = row[3];
         meeting.time_end = row[4];
         meeting.user_id = std::stoi(row[5]);
+        meeting.status = row[6];
         meetings.push_back(meeting);
     }
     return meetings;
 }
 
 std::vector<Meeting> DatabaseManager::get_all_meetings() {
-    std::string sql = "SELECT id, room_id, topic, time_start, time_end, user_id FROM meetings";
+    std::string sql = "SELECT id, room_id, topic, time_start, time_end, user_id, status FROM meetings";
     auto results = db->query(sql);
     
     std::vector<Meeting> meetings;
@@ -270,6 +274,7 @@ std::vector<Meeting> DatabaseManager::get_all_meetings() {
         meeting.time_start = row[3];
         meeting.time_end = row[4];
         meeting.user_id = std::stoi(row[5]);
+        meeting.status = row[6];
         meetings.push_back(meeting);
     }
     return meetings;
@@ -287,6 +292,35 @@ bool DatabaseManager::update_meeting(int id, int room_id, const std::string& top
     } catch (const sqlite::database_error&) {
         return false;
     }
+}
+
+bool DatabaseManager::update_meeting_status(int id, const std::string& status) {
+    std::string sql = "UPDATE meetings SET status = '" + status + "' WHERE id = " + std::to_string(id);
+    try {
+        db->execute(sql);
+        return true;
+    } catch (const sqlite::database_error&) {
+        return false;
+    }
+}
+
+std::vector<Meeting> DatabaseManager::get_meetings_by_status(const std::string& status) {
+    std::string sql = "SELECT id, room_id, topic, time_start, time_end, user_id, status FROM meetings WHERE status = '" + status + "'";
+    auto results = db->query(sql);
+    
+    std::vector<Meeting> meetings;
+    for (const auto& row : results) {
+        Meeting meeting;
+        meeting.id = std::stoi(row[0]);
+        meeting.room_id = std::stoi(row[1]);
+        meeting.topic = row[2];
+        meeting.time_start = row[3];
+        meeting.time_end = row[4];
+        meeting.user_id = std::stoi(row[5]);
+        meeting.status = row[6];
+        meetings.push_back(meeting);
+    }
+    return meetings;
 }
 
 bool DatabaseManager::delete_meeting(int id) {

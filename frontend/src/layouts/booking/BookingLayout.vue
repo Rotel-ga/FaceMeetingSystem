@@ -26,13 +26,7 @@
           value="roommanagement" 
           :to="{ name: 'RoomManagement' }"
         ></v-list-item>
-         <v-list-item 
-          v-if="userRole === 'admin'" 
-          prepend-icon="mdi-calendar-multiple-check" 
-          title="预定管理" 
-          value="bookingmanagement" 
-          :to="{ name: 'BookingManagement' }"
-        ></v-list-item>
+
         <v-list-item prepend-icon="mdi-magnify" title="查询会议室" value="query" :to="{ name: 'QueryRoom' }"></v-list-item>
         <v-list-item prepend-icon="mdi-calendar-check" title="我的预定" value="mybookings" :to="{ name: 'MyBookings' }"></v-list-item>
         <v-list-item prepend-icon="mdi-logout" title="退出登录" value="logout" @click="handleLogout"></v-list-item>

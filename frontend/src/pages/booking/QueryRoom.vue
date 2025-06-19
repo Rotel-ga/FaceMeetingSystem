@@ -8,7 +8,7 @@
             <v-date-picker v-model="selectedDate" label="选择日期"></v-date-picker>
           </v-col>
           <v-col cols="12" md="6" class="d-flex align-center">
-            <v-btn color="primary" @click="searchRooms">查询</v-btn>
+            <v-btn color="primary" @click="searchRooms">查询并预定</v-btn>
           </v-col>
         </v-row>
 
@@ -30,7 +30,11 @@
           >
             <v-list-item-content>
               <v-list-item-title>{{ room.name }}</v-list-item-title>
-              <v-list-item-subtitle>状态: {{ room.isAvailable ? '可用' : '不可用' }}</v-list-item-subtitle>
+              <v-list-item-subtitle>
+                状态: {{ room.isAvailable ? '可用' : '不可用' }} | 
+                可用时间段: {{ room.availableHours }}小时 | 
+                已预定会议: {{ room.totalMeetings }}个
+              </v-list-item-subtitle>
             </v-list-item-content>
             <v-list-item-action>
               <v-btn v-if="room.isAvailable" color="success" small @click.stop="goToBooking(room)">预定</v-btn>
@@ -43,48 +47,107 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { getRooms } from '@/api/roomService.js';
+import { getMeetingsByRoom } from '@/api/meetingService.js';
 
-const selectedDate = ref(new Date().toISOString().substr(0, 10));
+// 确保日期格式始终为 YYYY-MM-DD 字符串格式，避免时区问题
+const formatDateToString = (date) => {
+  let targetDate;
+  
+  if (date instanceof Date) {
+    targetDate = date;
+  } else if (typeof date === 'string') {
+    if (date.includes('T')) {
+      targetDate = new Date(date);
+    } else {
+      // 如果已经是 YYYY-MM-DD 格式，直接返回
+      return date;
+    }
+  } else {
+    targetDate = new Date();
+  }
+  
+  // 使用本地时间而不是UTC时间，避免时区偏差
+  const year = targetDate.getFullYear();
+  const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+  const day = String(targetDate.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+};
+
+// 初始化为今天的日期
+const today = new Date();
+const selectedDate = ref(formatDateToString(today));
 const availableRooms = ref([]);
 const loading = ref(false);
 const searched = ref(false);
 const router = useRouter();
 
-// 模拟会议室数据
-const allRooms = [
-  { id: '101', name: '会议室A', bookings: [{ date: '2024-07-20', timeSlots: ['09:00-10:00'] }] },
-  { id: '102', name: '会议室B', bookings: [] },
-  { id: '103', name: '会议室C', bookings: [{ date: '2024-07-20', timeSlots: ['14:00-16:00'] }] },
-  { id: '201', name: '会议室D', bookings: [] },
-];
-
-const searchRooms = () => {
-  loading.value = true;
-  searched.value = true;
-  // 模拟API调用延时
-  setTimeout(() => {
-    availableRooms.value = allRooms.filter(room => {
-      // 简单演示，实际应用中需要更复杂的可用性检查逻辑
-      const isBookedOnSelectedDate = room.bookings.some(b => b.date === selectedDate.value);
-      return !isBookedOnSelectedDate; // 简化：如果当天有任何预定则认为不可用
-    }).map(room => ({ ...room, isAvailable: true })); // 假设查询结果都是可用的，实际应根据时间段判断
+// 搜索可用会议室
+const searchRooms = async () => {
+  try {
+    loading.value = true;
+    searched.value = true;
+    
+    // 获取所有会议室
+    const allRooms = await getRooms();
+    
+    // 检查每个会议室在选定日期的可用性
+    const roomsWithAvailability = await Promise.all(
+      allRooms.map(async (room) => {
+        try {
+          // 获取该会议室在选定日期的会议
+          const meetings = await getMeetingsByRoom(room.id, formatDateToString(selectedDate.value));
+          
+          // 计算可用时间段数量
+          const workHours = 9; // 9小时工作时间 (9:00-18:00)
+          const bookedHours = meetings.length; // 简化计算，假设每个会议占用1小时
+          const availableHours = workHours - bookedHours;
+          
+          return {
+            ...room,
+            isAvailable: availableHours > 0,
+            availableHours: availableHours,
+            totalMeetings: meetings.length,
+            meetings: meetings
+          };
+        } catch (error) {
+          console.error(`获取会议室 ${room.id} 的会议失败:`, error);
+          return {
+            ...room,
+            isAvailable: true, // 如果获取失败，假设可用
+            availableHours: 9,
+            totalMeetings: 0,
+            meetings: []
+          };
+        }
+      })
+    );
+    
+    availableRooms.value = roomsWithAvailability;
+  } catch (error) {
+    console.error('搜索会议室失败:', error);
+    alert('搜索会议室失败: ' + error.message);
+  } finally {
     loading.value = false;
-  }, 1000);
+  }
 };
 
 const selectRoom = (room) => {
   console.log('Selected room:', room);
-  // 可以导航到房间详情或预定页面
+  // 可以显示会议室详情
 };
 
 const goToBooking = (room) => {
-  router.push({ name: 'BookRoom', params: { roomId: room.id }, query: { date: selectedDate.value } });
+  router.push({ name: 'BookRoom', params: { roomId: room.id }, query: { date: formatDateToString(selectedDate.value) } });
 };
 
-// 初始化时执行一次查询，或根据需求调整
-// searchRooms();
+// 页面加载时执行一次查询
+onMounted(() => {
+  searchRooms();
+});
 </script>
 
 <style scoped>

@@ -19,6 +19,7 @@ struct Meeting {
     std::string time_start;
     std::string time_end;
     int user_id;
+    std::string status; // 新增状态字段：pending(待审核), approved(已通过), rejected(已拒绝), cancelled(已取消)
 };
 
 struct Room {
@@ -68,6 +69,8 @@ public:
     std::vector<Meeting> get_all_meetings();
     bool update_meeting(int id, int room_id, const std::string& topic, 
                        const std::string& time_start, const std::string& time_end, int user_id);
+    bool update_meeting_status(int id, const std::string& status);
+    std::vector<Meeting> get_meetings_by_status(const std::string& status);
     bool delete_meeting(int id);
     
     // 签到操作

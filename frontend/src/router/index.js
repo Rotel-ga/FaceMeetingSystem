@@ -41,10 +41,11 @@ const routes = [
         component: () => import('@/views/admin/RoomManagement.vue'),
         meta: { requiresAuth: true, roles: ['admin'] }
       },
+
       {
-        path: 'admin/bookings',
-        name: 'BookingManagement',
-        component: () => import('@/views/admin/BookingManagement.vue'),
+        path: 'admin/meeting-review',
+        name: 'MeetingReview',
+        component: () => import('@/pages/admin/MeetingReview.vue'),
         meta: { requiresAuth: true, roles: ['admin'] }
       },
       // 预定端路由

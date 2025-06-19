@@ -46,23 +46,67 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { getMeetingsByUser, deleteMeeting } from '@/api/meetingService';
+import { getRooms } from '@/api/roomService';
 
 const bookings = ref([]);
 const loading = ref(true);
 const cancelDialog = ref(false);
 const bookingToCancel = ref(null);
+const rooms = ref([]);
 
-const fetchMyBookings = () => {
+const fetchMyBookings = async () => {
   loading.value = true;
-  // 模拟从localStorage获取数据
-  setTimeout(() => {
-    const storedBookings = JSON.parse(localStorage.getItem('myBookings') || '[]');
-    // 实际应用中，这里应该根据当前登录用户过滤
-    // const currentUser = localStorage.getItem('username');
-    // bookings.value = storedBookings.filter(b => b.user === currentUser);
-    bookings.value = storedBookings.sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id); // 按日期和ID排序
+  try {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      console.error('用户未登录');
+      loading.value = false;
+      return;
+    }
+
+    // 获取所有会议室信息用于显示名称
+    const roomsData = await getRooms();
+    rooms.value = roomsData;
+    
+    // 获取用户的会议
+    const meetingsData = await getMeetingsByUser(parseInt(userId));
+    
+    // 转换会议数据为预定格式
+    bookings.value = meetingsData.map(meeting => {
+      const room = rooms.value.find(r => r.id === meeting.room_id);
+      const startTime = new Date(meeting.time_start);
+      const endTime = new Date(meeting.time_end);
+      
+      return {
+        id: meeting.id,
+        roomId: meeting.room_id,
+        roomName: room ? room.name : `会议室${meeting.room_id}`,
+        date: startTime.toISOString().split('T')[0],
+        timeSlots: [`${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}-${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`],
+        reason: meeting.title,
+        status: getStatusDisplayText(meeting.status), // 显示状态
+        originalStatus: meeting.status, // 原始状态用于逻辑判断
+        timeStart: meeting.time_start,
+        timeEnd: meeting.time_end
+      };
+    }).sort((a, b) => new Date(b.timeStart) - new Date(a.timeStart));
+    
+  } catch (error) {
+    console.error('获取预定信息失败:', error);
+  } finally {
     loading.value = false;
-  }, 500);
+  }
+};
+
+const getStatusDisplayText = (status) => {
+  const statusMap = {
+    'pending': '待审核',
+    'approved': '已通过',
+    'rejected': '已拒绝',
+    'cancelled': '已取消'
+  };
+  return statusMap[status] || status;
 };
 
 const getBookingStatusColor = (status) => {
@@ -76,10 +120,10 @@ const getBookingStatusColor = (status) => {
 };
 
 const canCancel = (booking) => {
-  // 简单逻辑：只能取消“已预定”状态的，并且预定时间在未来
-  if (booking.status !== '已预定') return false;
-  // 假设预定时间至少是当天
-  const bookingDateTime = new Date(`${booking.date}T${booking.timeSlots[0].split('-')[0].trim()}:00`);
+  // 只能取消"approved"状态的，并且预定时间在未来
+  if (booking.originalStatus !== 'approved') return false;
+  // 检查预定时间是否在未来
+  const bookingDateTime = new Date(booking.timeStart);
   return bookingDateTime > new Date();
 };
 
@@ -88,30 +132,27 @@ const confirmCancelBooking = (booking) => {
   cancelDialog.value = true;
 };
 
-const executeCancelBooking = () => {
+const executeCancelBooking = async () => {
   if (!bookingToCancel.value) return;
-  // 模拟API调用取消预定
-  console.log('Cancelling booking:', bookingToCancel.value.id);
-
-  // 更新localStorage中的数据
-  const storedBookings = JSON.parse(localStorage.getItem('myBookings') || '[]');
-  const updatedBookings = storedBookings.map(b => {
-    if (b.id === bookingToCancel.value.id) {
-      return { ...b, status: '已取消' };
+  
+  try {
+    // 调用API删除会议
+    await deleteMeeting(bookingToCancel.value.id);
+    
+    // 从列表中移除已取消的预定
+    const index = bookings.value.findIndex(b => b.id === bookingToCancel.value.id);
+    if (index !== -1) {
+      bookings.value.splice(index, 1);
     }
-    return b;
-  });
-  localStorage.setItem('myBookings', JSON.stringify(updatedBookings));
-
-  // 更新当前列表中的状态
-  const index = bookings.value.findIndex(b => b.id === bookingToCancel.value.id);
-  if (index !== -1) {
-    bookings.value[index].status = '已取消';
+    
+    console.log('预定已成功取消');
+  } catch (error) {
+    console.error('取消预定失败:', error);
+    // 可以添加错误提示
+  } finally {
+    cancelDialog.value = false;
+    bookingToCancel.value = null;
   }
-
-  cancelDialog.value = false;
-  bookingToCancel.value = null;
-  // 可以添加一个提示消息
 };
 
 onMounted(() => {

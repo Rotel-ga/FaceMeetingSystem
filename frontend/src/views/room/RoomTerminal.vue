@@ -252,7 +252,7 @@ const loadTodayMeetings = () => {
   todayMeetings.value = bookings.filter(booking => 
     booking.roomId === roomId && 
     booking.date === today &&
-    booking.status === '已通过'
+    (booking.status === '已通过' || booking.status === 'approved')
   ).sort((a, b) => {
     const timeA = a.timeSlots.split('-')[0]
     const timeB = b.timeSlots.split('-')[0]

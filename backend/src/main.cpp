@@ -308,6 +308,91 @@ int main()
             }
         });
 
+        // 更新会议室
+        CROW_ROUTE(app, "/api/rooms/<int>").methods("PUT"_method)([](const crow::request& req, int room_id){
+            try {
+                auto body = crow::json::load(req.body);
+                if (!body) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Invalid JSON";
+                    return crow::response(400, error);
+                }
+                
+                if (!body.has("name")) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Room name is required";
+                    return crow::response(400, error);
+                }
+                
+                std::string name = body["name"].s();
+                
+                // 检查会议室是否存在
+                try {
+                    db_manager->get_room_by_id(room_id);
+                } catch (const std::exception& e) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Room not found";
+                    return crow::response(404, error);
+                }
+                
+                bool success = db_manager->update_room(room_id, name);
+                
+                if (success) {
+                    crow::json::wvalue result;
+                    result["success"] = true;
+                    result["message"] = "Room updated successfully";
+                    return crow::response(200, result);
+                } else {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Failed to update room";
+                    return crow::response(500, error);
+                }
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
+        // 删除会议室
+        CROW_ROUTE(app, "/api/rooms/<int>").methods("DELETE"_method)([](const crow::request& req, int room_id){
+            try {
+                // 检查会议室是否存在
+                try {
+                    db_manager->get_room_by_id(room_id);
+                } catch (const std::exception& e) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Room not found";
+                    return crow::response(404, error);
+                }
+                
+                bool success = db_manager->delete_room(room_id);
+                
+                if (success) {
+                    crow::json::wvalue result;
+                    result["success"] = true;
+                    result["message"] = "Room deleted successfully";
+                    return crow::response(200, result);
+                } else {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Failed to delete room";
+                    return crow::response(500, error);
+                }
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
         // 获取所有会议
         CROW_ROUTE(app, "/api/meetings").methods("GET"_method)([](const crow::request& req){
             try {
@@ -324,6 +409,7 @@ int main()
                     meeting_json["time_start"] = meetings[i].time_start;
                     meeting_json["time_end"] = meetings[i].time_end;
                     meeting_json["user_id"] = meetings[i].user_id;
+                    meeting_json["status"] = meetings[i].status;
                     result["data"][i] = std::move(meeting_json);
                 }
                 
@@ -361,6 +447,251 @@ int main()
                 result["message"] = "Meeting created successfully";
                 
                 return crow::response(201, result);
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
+        // 更新会议
+        CROW_ROUTE(app, "/api/meetings/<int>").methods("PUT"_method)([](const crow::request& req, int meeting_id){
+            try {
+                auto body = crow::json::load(req.body);
+                if (!body) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Invalid JSON";
+                    return crow::response(400, error);
+                }
+                
+                int room_id = body["room_id"].i();
+                std::string topic = body["topic"].s();
+                std::string time_start = body["time_start"].s();
+                std::string time_end = body["time_end"].s();
+                int user_id = body["user_id"].i();
+                
+                bool success = db_manager->update_meeting(meeting_id, room_id, topic, time_start, time_end, user_id);
+                
+                crow::json::wvalue result;
+                if (success) {
+                    result["success"] = true;
+                    result["message"] = "Meeting updated successfully";
+                    return crow::response(200, result);
+                } else {
+                    result["success"] = false;
+                    result["message"] = "Meeting not found";
+                    return crow::response(404, result);
+                }
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
+        // 删除会议
+        CROW_ROUTE(app, "/api/meetings/<int>").methods("DELETE"_method)([](const crow::request& req, int meeting_id){
+            try {
+                bool success = db_manager->delete_meeting(meeting_id);
+                
+                crow::json::wvalue result;
+                if (success) {
+                    result["success"] = true;
+                    result["message"] = "Meeting deleted successfully";
+                    return crow::response(200, result);
+                } else {
+                    result["success"] = false;
+                    result["message"] = "Meeting not found";
+                    return crow::response(404, result);
+                }
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
+        // 根据会议室ID和日期查询会议
+        CROW_ROUTE(app, "/api/meetings/room/<int>").methods("GET"_method)([](const crow::request& req, int room_id){
+            try {
+                std::string date = req.url_params.get("date") ? req.url_params.get("date") : "";
+                
+                auto meetings = db_manager->get_meetings_by_room(room_id);
+                crow::json::wvalue result;
+                result["success"] = true;
+                result["data"] = crow::json::wvalue::list();
+                
+                size_t count = 0;
+                for (const auto& meeting : meetings) {
+                    // 如果指定了日期，则过滤
+                    if (!date.empty()) {
+                        std::string meeting_date = meeting.time_start.substr(0, 10); // 提取日期部分 YYYY-MM-DD
+                        if (meeting_date != date) {
+                            continue;
+                        }
+                    }
+                    
+                    crow::json::wvalue meeting_json;
+                    meeting_json["id"] = meeting.id;
+                    meeting_json["room_id"] = meeting.room_id;
+                    meeting_json["topic"] = meeting.topic;
+                    meeting_json["time_start"] = meeting.time_start;
+                    meeting_json["time_end"] = meeting.time_end;
+                    meeting_json["user_id"] = meeting.user_id;
+                    meeting_json["status"] = meeting.status;
+                    result["data"][count++] = std::move(meeting_json);
+                }
+                
+                return crow::response(200, result);
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
+        // 根据用户ID查询会议
+        CROW_ROUTE(app, "/api/meetings/user/<int>").methods("GET"_method)([](const crow::request& req, int user_id){
+            try {
+                auto meetings = db_manager->get_meetings_by_user(user_id);
+                crow::json::wvalue result;
+                result["success"] = true;
+                result["data"] = crow::json::wvalue::list();
+                
+                for (size_t i = 0; i < meetings.size(); ++i) {
+                    crow::json::wvalue meeting_json;
+                    meeting_json["id"] = meetings[i].id;
+                    meeting_json["room_id"] = meetings[i].room_id;
+                    meeting_json["topic"] = meetings[i].topic;
+                    meeting_json["time_start"] = meetings[i].time_start;
+                    meeting_json["time_end"] = meetings[i].time_end;
+                    meeting_json["user_id"] = meetings[i].user_id;
+                    meeting_json["status"] = meetings[i].status;
+                    result["data"][i] = std::move(meeting_json);
+                }
+                
+                return crow::response(200, result);
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
+        // 管理员获取待审核会议
+        CROW_ROUTE(app, "/api/admin/meetings/pending").methods("GET"_method)([](const crow::request& req){
+            try {
+                auto meetings = db_manager->get_meetings_by_status("pending");
+                crow::json::wvalue result;
+                result["success"] = true;
+                result["data"] = crow::json::wvalue::list();
+                
+                for (size_t i = 0; i < meetings.size(); ++i) {
+                    crow::json::wvalue meeting_json;
+                    meeting_json["id"] = meetings[i].id;
+                    meeting_json["room_id"] = meetings[i].room_id;
+                    meeting_json["topic"] = meetings[i].topic;
+                    meeting_json["time_start"] = meetings[i].time_start;
+                    meeting_json["time_end"] = meetings[i].time_end;
+                    meeting_json["user_id"] = meetings[i].user_id;
+                    meeting_json["status"] = meetings[i].status;
+                    result["data"][i] = std::move(meeting_json);
+                }
+                
+                return crow::response(200, result);
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
+        // 管理员审核会议（批准或拒绝）
+        CROW_ROUTE(app, "/api/admin/meetings/<int>/review").methods("PUT"_method)([](const crow::request& req, int meeting_id){
+            try {
+                auto body = crow::json::load(req.body);
+                if (!body) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Invalid JSON";
+                    return crow::response(400, error);
+                }
+                
+                if (!body.has("status")) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Status is required";
+                    return crow::response(400, error);
+                }
+                
+                std::string status = body["status"].s();
+                
+                // 验证状态值
+                if (status != "approved" && status != "rejected") {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Invalid status. Must be 'approved' or 'rejected'";
+                    return crow::response(400, error);
+                }
+                
+                bool success = db_manager->update_meeting_status(meeting_id, status);
+                
+                if (success) {
+                    crow::json::wvalue result;
+                    result["success"] = true;
+                    result["message"] = "Meeting status updated successfully";
+                    return crow::response(200, result);
+                } else {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Failed to update meeting status";
+                    return crow::response(500, error);
+                }
+                
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
+        // 管理员获取所有会议（按状态筛选）
+        CROW_ROUTE(app, "/api/admin/meetings").methods("GET"_method)([](const crow::request& req){
+            try {
+                std::string status = req.url_params.get("status") ? req.url_params.get("status") : "";
+                
+                std::vector<Meeting> meetings;
+                if (status.empty()) {
+                    meetings = db_manager->get_all_meetings();
+                } else {
+                    meetings = db_manager->get_meetings_by_status(status);
+                }
+                
+                crow::json::wvalue result;
+                result["success"] = true;
+                result["data"] = crow::json::wvalue::list();
+                
+                for (size_t i = 0; i < meetings.size(); ++i) {
+                    crow::json::wvalue meeting_json;
+                    meeting_json["id"] = meetings[i].id;
+                    meeting_json["room_id"] = meetings[i].room_id;
+                    meeting_json["topic"] = meetings[i].topic;
+                    meeting_json["time_start"] = meetings[i].time_start;
+                    meeting_json["time_end"] = meetings[i].time_end;
+                    meeting_json["user_id"] = meetings[i].user_id;
+                    meeting_json["status"] = meetings[i].status;
+                    result["data"][i] = std::move(meeting_json);
+                }
+                
+                return crow::response(200, result);
             } catch (const std::exception& e) {
                 crow::json::wvalue error;
                 error["success"] = false;

@@ -22,7 +22,7 @@
             <v-icon small class="mr-2" @click="editRoom(item)">
               mdi-pencil
             </v-icon>
-            <v-icon small @click="deleteRoom(item)">
+            <v-icon small @click="handleDeleteRoom(item)">
               mdi-delete
             </v-icon>
           </template>
@@ -55,7 +55,8 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
+import { getRooms, createRoom, updateRoom, deleteRoom } from '@/api/roomService.js';
 
 const roomHeaders = ref([
   { title: 'ID', value: 'id', key: 'id' },
@@ -63,17 +64,32 @@ const roomHeaders = ref([
   { title: '操作', value: 'actions', sortable: false, key: 'actions' },
 ]);
 
-const rooms = ref([
-  // 示例数据
-  { id: 1, name: '会议室A' },
-  { id: 2, name: '会议室B' },
-]);
-
+const rooms = ref([]);
+const loading = ref(false);
 const showAddRoomDialog = ref(false);
 const editingRoom = ref(null);
 const currentRoom = reactive({
   id: null,
   name: '',
+});
+
+// 加载会议室列表
+const loadRooms = async () => {
+  try {
+    loading.value = true;
+    const roomData = await getRooms();
+    rooms.value = roomData;
+  } catch (error) {
+    console.error('获取会议室列表失败:', error);
+    alert('获取会议室列表失败: ' + error.message);
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 页面加载时获取会议室列表
+onMounted(() => {
+  loadRooms();
 });
 
 const editRoom = (room) => {
@@ -82,10 +98,17 @@ const editRoom = (room) => {
   showAddRoomDialog.value = true;
 };
 
-const deleteRoom = (room) => {
-  console.log('删除会议室:', room);
-  rooms.value = rooms.value.filter(r => r.id !== room.id);
-  // 在实际应用中，您需要调用API删除后端数据
+const handleDeleteRoom = async (room) => {
+  if (confirm(`确定要删除会议室 "${room.name}" 吗？`)) {
+    try {
+      await deleteRoom(room.id);
+      await loadRooms(); // 重新加载列表
+      alert('会议室删除成功');
+    } catch (error) {
+      console.error('删除会议室失败:', error);
+      alert('删除会议室失败: ' + error.message);
+    }
+  }
 };
 
 const closeAddRoomDialog = () => {
@@ -96,20 +119,28 @@ const closeAddRoomDialog = () => {
   currentRoom.name = '';
 };
 
-const saveRoom = () => {
-  if (editingRoom.value) {
-    const index = rooms.value.findIndex(r => r.id === currentRoom.id);
-    if (index !== -1) {
-      rooms.value.splice(index, 1, { ...currentRoom });
-    }
-    console.log('编辑会议室:', currentRoom);
-    // 在实际应用中，您需要调用API更新后端数据
-  } else {
-    const newRoom = { ...currentRoom, id: Date.now() }; // 简单生成ID
-    rooms.value.push(newRoom);
-    console.log('添加会议室:', newRoom);
-    // 在实际应用中，您需要调用API创建后端数据
+const saveRoom = async () => {
+  if (!currentRoom.name.trim()) {
+    alert('请输入会议室名称');
+    return;
   }
-  closeAddRoomDialog();
+
+  try {
+    if (editingRoom.value) {
+      // 更新会议室
+      await updateRoom(currentRoom.id, currentRoom.name);
+      alert('会议室更新成功');
+    } else {
+      // 创建新会议室
+      await createRoom(currentRoom.name);
+      alert('会议室创建成功');
+    }
+    
+    closeAddRoomDialog();
+    await loadRooms(); // 重新加载列表
+  } catch (error) {
+    console.error('保存会议室失败:', error);
+    alert('保存会议室失败: ' + error.message);
+  }
 };
 </script>

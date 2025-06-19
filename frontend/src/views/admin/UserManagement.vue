@@ -238,7 +238,9 @@ const users = ref([]);
 
 const loadUsers = async () => {
   try {
-    const userData = await getUsers();
+    const result = await getUsers();
+    // 检查响应格式并提取用户数据数组
+    const userData = result.success && result.data ? result.data : [];
     users.value = userData.map(user => ({
       id: user.id,
       name: user.username,

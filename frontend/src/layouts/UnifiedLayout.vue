@@ -44,11 +44,13 @@
             :to="{ name: 'RoomManagement' }"
           ></v-list-item>
           
+
+          
           <v-list-item
-            prepend-icon="mdi-calendar-multiple-check"
-            title="预定管理"
-            value="bookingmanagement"
-            :to="{ name: 'BookingManagement' }"
+            prepend-icon="mdi-clipboard-check"
+            title="会议审核"
+            value="meetingreview"
+            :to="{ name: 'MeetingReview' }"
           ></v-list-item>
         </v-list-group>
 

@@ -107,6 +107,17 @@
 import { ref, computed } from 'vue';
 
 const queryForm = ref(null);
+// 确保日期格式始终为 YYYY-MM-DD 字符串格式
+const formatDateToString = (date) => {
+  if (date instanceof Date) {
+    return date.toISOString().substr(0, 10);
+  }
+  if (typeof date === 'string' && date.includes('T')) {
+    return date.substr(0, 10);
+  }
+  return date || new Date().toISOString().substr(0, 10);
+};
+
 const queryDate = ref(new Date().toISOString().split('T')[0]); // 默认今天
 const queryStartTime = ref('09:00');
 const queryEndTime = ref('10:00');
@@ -162,8 +173,8 @@ async function searchRooms() {
   // 模拟API调用
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  const searchStartDateTime = new Date(`${queryDate.value}T${queryStartTime.value}:00`);
-  const searchEndDateTime = new Date(`${queryDate.value}T${queryEndTime.value}:00`);
+  const searchStartDateTime = new Date(`${formatDateToString(queryDate.value)}T${queryStartTime.value}:00`);
+    const searchEndDateTime = new Date(`${formatDateToString(queryDate.value)}T${queryEndTime.value}:00`);
 
   availableRooms.value = allRooms.filter(room => 
     room.capacity >= (queryCapacity.value || 0) &&
@@ -212,8 +223,8 @@ async function confirmBooking() {
     roomName: selectedRoom.value.name,
     userName: bookingUserName.value,
     purpose: bookingPurpose.value,
-    startTime: `${queryDate.value}T${queryStartTime.value}:00`,
-    endTime: `${queryDate.value}T${queryEndTime.value}:00`,
+    startTime: `${formatDateToString(queryDate.value)}T${queryStartTime.value}:00`,
+    endTime: `${formatDateToString(queryDate.value)}T${queryEndTime.value}:00`,
     status: '待审核', // 新预定默认为待审核
   };
   
