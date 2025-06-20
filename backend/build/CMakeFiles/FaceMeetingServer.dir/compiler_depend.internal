@@ -761,6 +761,7 @@ CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj
  D:/msys64/mingw64/include/c++/15.1.0/bits/stl_raw_storage_iter.h
  D:/msys64/mingw64/include/c++/15.1.0/bits/stl_relops.h
  D:/msys64/mingw64/include/c++/15.1.0/bits/stl_set.h
+ D:/msys64/mingw64/include/c++/15.1.0/bits/stl_stack.h
  D:/msys64/mingw64/include/c++/15.1.0/bits/stl_tempbuf.h
  D:/msys64/mingw64/include/c++/15.1.0/bits/stl_tree.h
  D:/msys64/mingw64/include/c++/15.1.0/bits/stl_uninitialized.h
@@ -843,6 +844,7 @@ CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj
  D:/msys64/mingw64/include/c++/15.1.0/ratio
  D:/msys64/mingw64/include/c++/15.1.0/set
  D:/msys64/mingw64/include/c++/15.1.0/sstream
+ D:/msys64/mingw64/include/c++/15.1.0/stack
  D:/msys64/mingw64/include/c++/15.1.0/stdexcept
  D:/msys64/mingw64/include/c++/15.1.0/stdlib.h
  D:/msys64/mingw64/include/c++/15.1.0/streambuf
@@ -898,6 +900,16 @@ CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj
  D:/msys64/mingw64/include/corecrt_wstdlib.h
  D:/msys64/mingw64/include/crtdefs.h
  D:/msys64/mingw64/include/ctype.h
+ D:/msys64/mingw64/include/curl/curl.h
+ D:/msys64/mingw64/include/curl/curlver.h
+ D:/msys64/mingw64/include/curl/easy.h
+ D:/msys64/mingw64/include/curl/header.h
+ D:/msys64/mingw64/include/curl/mprintf.h
+ D:/msys64/mingw64/include/curl/multi.h
+ D:/msys64/mingw64/include/curl/options.h
+ D:/msys64/mingw64/include/curl/system.h
+ D:/msys64/mingw64/include/curl/urlapi.h
+ D:/msys64/mingw64/include/curl/websockets.h
  D:/msys64/mingw64/include/datetimeapi.h
  D:/msys64/mingw64/include/debugapi.h
  D:/msys64/mingw64/include/driverspecs.h
@@ -915,9 +927,19 @@ CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj
  D:/msys64/mingw64/include/in6addr.h
  D:/msys64/mingw64/include/inaddr.h
  D:/msys64/mingw64/include/interlockedapi.h
+ D:/msys64/mingw64/include/inttypes.h
  D:/msys64/mingw64/include/io.h
  D:/msys64/mingw64/include/ioapiset.h
  D:/msys64/mingw64/include/jobapi.h
+ D:/msys64/mingw64/include/json/allocator.h
+ D:/msys64/mingw64/include/json/config.h
+ D:/msys64/mingw64/include/json/forwards.h
+ D:/msys64/mingw64/include/json/json.h
+ D:/msys64/mingw64/include/json/json_features.h
+ D:/msys64/mingw64/include/json/reader.h
+ D:/msys64/mingw64/include/json/value.h
+ D:/msys64/mingw64/include/json/version.h
+ D:/msys64/mingw64/include/json/writer.h
  D:/msys64/mingw64/include/ktmtypes.h
  D:/msys64/mingw64/include/libloaderapi.h
  D:/msys64/mingw64/include/limits.h

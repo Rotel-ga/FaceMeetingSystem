@@ -26,7 +26,7 @@
             <v-icon small @click="deleteUserAction(item)">
               mdi-delete
             </v-icon>
-             <v-btn small color="secondary" @click="registerFace(item)" class="ml-2">
+             <v-btn small color="secondary" @click="openFaceRegisterDialog(item)" class="ml-2">
               注册人脸
             </v-btn>
           </template>
@@ -75,93 +75,61 @@
             <v-card-text>
               <v-stepper v-model="faceRegisterStep" alt-labels>
                 <v-stepper-header>
-                  <v-stepper-item :complete="faceRegisterStep > 1" :value="1" title="准备"></v-stepper-item>
+                  <v-stepper-item :complete="faceRegisterStep > 1" :value="1" title="上传图片"></v-stepper-item>
                   <v-divider></v-divider>
-                  <v-stepper-item :complete="faceRegisterStep > 2" :value="2" title="拍照"></v-stepper-item>
-                  <v-divider></v-divider>
-                  <v-stepper-item :value="3" title="完成"></v-stepper-item>
+                  <v-stepper-item :value="2" title="完成"></v-stepper-item>
                 </v-stepper-header>
 
                 <v-stepper-window>
-                  <!-- 步骤1: 说明 -->
+                  <!-- 步骤1: 上传图片 -->
                   <v-stepper-window-item :value="1">
                     <div class="text-center pa-4">
                       <v-icon size="64" color="primary" class="mb-4">mdi-face-recognition</v-icon>
-                      <h3 class="mb-4">人脸注册说明</h3>
-                      <v-list>
-                        <v-list-item>
-                          <v-list-item-icon><v-icon>mdi-numeric-1-circle</v-icon></v-list-item-icon>
-                          <v-list-item-content>
-                            <v-list-item-title>请确保光线充足</v-list-item-title>
-                          </v-list-item-content>
-                        </v-list-item>
-                        <v-list-item>
-                          <v-list-item-icon><v-icon>mdi-numeric-2-circle</v-icon></v-list-item-icon>
-                          <v-list-item-content>
-                            <v-list-item-title>正面面对摄像头</v-list-item-title>
-                          </v-list-item-content>
-                        </v-list-item>
-                        <v-list-item>
-                          <v-list-item-icon><v-icon>mdi-numeric-3-circle</v-icon></v-list-item-icon>
-                          <v-list-item-content>
-                            <v-list-item-title>需要拍摄3张不同角度的照片</v-list-item-title>
-                          </v-list-item-content>
-                        </v-list-item>
-                      </v-list>
-                    </div>
-                  </v-stepper-window-item>
-
-                  <!-- 步骤2: 拍照 -->
-                  <v-stepper-window-item :value="2">
-                    <div class="text-center pa-4">
-                      <div class="mb-4">
-                        <h4>已拍摄: {{ capturedImages.length }}/3 张照片</h4>
+                      <h3 class="mb-4">上传人脸图片</h3>
+                      <p class="mb-4">请选择一张清晰的人脸照片进行上传</p>
+                      
+                      <!-- 文件上传区域 -->
+                      <div class="upload-container mb-4">
+                        <v-file-input
+                          v-model="selectedFile"
+                          accept="image/png,image/jpg,image/jpeg,image/bmp"
+                          label="选择图片文件"
+                          prepend-icon="mdi-camera"
+                          show-size
+                          @update:model-value="handleFileChange"
+                          class="mb-4"
+                        ></v-file-input>
+                        
+                        <!-- 图片预览 -->
+                        <div v-if="previewImage" class="image-preview">
+                          <v-img
+                            :src="previewImage"
+                            max-width="300"
+                            max-height="300"
+                            class="mx-auto mb-4"
+                          ></v-img>
+                          <v-btn
+                            small
+                            color="secondary"
+                            @click="clearImage"
+                          >
+                            重新选择
+                          </v-btn>
+                        </div>
                       </div>
                       
-                      <!-- 摄像头预览 -->
-                      <div class="camera-container mb-4">
-                        <video 
-                          ref="faceVideoElement" 
-                          width="400" 
-                          height="300" 
-                          autoplay 
-                          muted
-                          class="face-camera-preview"
-                        ></video>
-                        <canvas 
-                          ref="faceCanvasElement" 
-                          width="400" 
-                          height="300" 
-                          style="display: none;"
-                        ></canvas>
-                      </div>
-
-                      <!-- 已拍摄的照片预览 -->
-                      <div v-if="capturedImages.length > 0" class="mb-4">
-                        <h5>已拍摄照片:</h5>
-                        <v-row justify="center">
-                          <v-col v-for="(image, index) in capturedImages" :key="index" cols="auto">
-                            <v-img :src="image" width="100" height="75" class="ma-1"></v-img>
-                          </v-col>
-                        </v-row>
-                      </div>
-
-                      <!-- 拍照按钮 -->
-                      <v-btn 
-                        v-if="capturedImages.length < 3" 
-                        color="primary" 
-                        large 
-                        @click="capturePhoto"
-                        :disabled="isCapturing"
+                      <v-alert
+                        type="info"
+                        text
+                        class="mb-4"
                       >
-                        <v-icon left>mdi-camera</v-icon>
-                        拍照 ({{ capturedImages.length + 1 }}/3)
-                      </v-btn>
+                        支持 PNG、JPG、JPEG、BMP 格式，文件大小不超过 2MB
+                      </v-alert>
                     </div>
                   </v-stepper-window-item>
 
-                  <!-- 步骤3: 完成 -->
-                  <v-stepper-window-item :value="3">
+                  <!-- 步骤2: 完成 -->
+                  <v-stepper-window-item :value="2">
                     <div class="text-center pa-4">
                       <v-icon size="64" color="green" class="mb-4">mdi-check-circle</v-icon>
                       <h3 class="mb-4">人脸注册完成！</h3>
@@ -184,31 +152,17 @@
                 取消
               </v-btn>
               <v-btn 
-                v-if="faceRegisterStep === 1" 
+                v-if="faceRegisterStep === 1 && selectedFile" 
                 color="primary" 
-                @click="startFaceCapture"
+                @click="submitFaceRegistration"
+                :loading="uploading"
+                :disabled="!selectedFile || uploading"
               >
-                开始拍照
+                确认注册
               </v-btn>
               
               <v-btn 
                 v-if="faceRegisterStep === 2" 
-                color="blue darken-1" 
-                text 
-                @click="faceRegisterStep = 1"
-              >
-                返回
-              </v-btn>
-              <v-btn 
-                v-if="faceRegisterStep === 2 && capturedImages.length === 3" 
-                color="primary" 
-                @click="submitFaceRegistration"
-              >
-                提交注册
-              </v-btn>
-              
-              <v-btn 
-                v-if="faceRegisterStep === 3" 
                 color="primary" 
                 @click="closeFaceRegisterDialog"
               >
@@ -223,8 +177,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { getUsers, createUser, updateUser, deleteUser } from '@/api/userService.js';
+import { ref, reactive, computed, onMounted } from 'vue';
+import { getUsers, createUser, updateUser, deleteUser, registerFace } from '@/api/userService.js';
 
 const userHeaders = ref([
   { title: 'ID', value: 'id', key: 'id' },
@@ -267,6 +221,14 @@ const currentUser = reactive({
   role: 'user',
 });
 
+// 人脸注册相关数据
+const showFaceRegisterDialog = ref(false);
+const selectedUser = ref(null);
+const faceRegisterStep = ref(1);
+const selectedFile = ref(null);
+const previewImage = ref(null);
+const uploading = ref(false);
+
 const editUser = (user) => {
   editingUser.value = user;
   Object.assign(currentUser, user);
@@ -285,112 +247,103 @@ const deleteUserAction = async (user) => {
   }
 };
 
-// 人脸注册相关数据
-const showFaceRegisterDialog = ref(false);
-const selectedUser = ref(null);
-const faceRegisterStep = ref(1);
-const capturedImages = ref([]);
-const isCapturing = ref(false);
-const faceVideoElement = ref(null);
-const faceCanvasElement = ref(null);
-
-const registerFace = (user) => {
+const openFaceRegisterDialog = (user) => {
   selectedUser.value = user;
   showFaceRegisterDialog.value = true;
+  faceRegisterStep.value = 1;
+  selectedFile.value = null;
+  previewImage.value = null;
 };
 
-// 开始人脸拍摄
-const startFaceCapture = async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { width: 400, height: 300, facingMode: 'user' } 
-    });
-    
-    if (faceVideoElement.value) {
-      faceVideoElement.value.srcObject = stream;
-      faceRegisterStep.value = 2;
-    }
-  } catch (error) {
-    console.error('摄像头启动失败:', error);
-    alert('摄像头启动失败，请检查设备权限');
+const handleFileChange = (file) => {
+  if (!file) {
+    clearImage();
+    return;
   }
+  
+  // 检查文件类型
+  const allowedTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/bmp'];
+  if (!allowedTypes.includes(file.type)) {
+    alert('请选择 PNG、JPG、JPEG 或 BMP 格式的图片');
+    clearImage();
+    return;
+  }
+  
+  // 检查文件大小 (2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    alert('图片大小不能超过 2MB');
+    clearImage();
+    return;
+  }
+  
+  selectedFile.value = file;
+  
+  // 创建预览
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    previewImage.value = e.target.result;
+  };
+  reader.readAsDataURL(file);
 };
 
-// 拍照
-const capturePhoto = () => {
-  if (!faceVideoElement.value || !faceCanvasElement.value) return;
-  
-  isCapturing.value = true;
-  
-  const canvas = faceCanvasElement.value;
-  const video = faceVideoElement.value;
-  const ctx = canvas.getContext('2d');
-  
-  ctx.drawImage(video, 0, 0, 400, 300);
-  const imageData = canvas.toDataURL('image/jpeg', 0.8);
-  
-  capturedImages.value.push(imageData);
-  
-  if (capturedImages.value.length === 3) {
-    setTimeout(() => {
-      isCapturing.value = false;
-    }, 500);
-  } else {
-    isCapturing.value = false;
-  }
+const clearImage = () => {
+  selectedFile.value = null;
+  previewImage.value = null;
 };
 
 // 提交人脸注册
 const submitFaceRegistration = async () => {
+  if (!selectedFile.value) {
+    alert('请先选择图片');
+    return;
+  }
+  
+  uploading.value = true;
+  
   try {
-    const registrationData = {
-      userId: selectedUser.value.id,
-      userName: selectedUser.value.name,
-      faceImages: capturedImages.value
-    };
+    // 将图片转换为base64
+    const base64 = await fileToBase64(selectedFile.value);
     
-    const result = await mockFaceRegistrationAPI(registrationData);
+    // 调用后端API
+    const result = await registerFace(selectedUser.value.id, base64);
     
     if (result.success) {
-      const userIndex = users.value.findIndex(u => u.id === selectedUser.value.id);
-      if (userIndex !== -1) {
-        users.value[userIndex].faceRegistered = true;
-        users.value[userIndex].faceId = result.faceId;
-        localStorage.setItem('users_data', JSON.stringify(users.value));
-      }
-      
-      faceRegisterStep.value = 3;
+      faceRegisterStep.value = 2;
+      alert('人脸注册成功！');
+      // 刷新用户列表
+      await loadUsers();
     } else {
-      alert('人脸注册失败: ' + result.message);
+      alert(result.message || '人脸注册失败');
     }
   } catch (error) {
-    console.error('人脸注册错误:', error);
-    alert('人脸注册过程中发生错误');
+    console.error('人脸注册失败:', error);
+    alert('人脸注册失败: ' + error.message);
+  } finally {
+    uploading.value = false;
   }
 };
 
-// 模拟人脸注册API
-const mockFaceRegistrationAPI = async (data) => {
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  return {
-    success: true,
-    faceId: 'face_' + Date.now(),
-    message: '人脸注册成功'
-  };
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // 移除data:image/xxx;base64,前缀
+      const base64 = reader.result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 };
 
 // 关闭人脸注册对话框
 const closeFaceRegisterDialog = () => {
   showFaceRegisterDialog.value = false;
   faceRegisterStep.value = 1;
-  capturedImages.value = [];
+  selectedFile.value = null;
+  previewImage.value = null;
   selectedUser.value = null;
-  
-  if (faceVideoElement.value && faceVideoElement.value.srcObject) {
-    const tracks = faceVideoElement.value.srcObject.getTracks();
-    tracks.forEach(track => track.stop());
-  }
+  uploading.value = false;
 };
 
 const closeAddUserDialog = () => {

@@ -12,9 +12,7 @@
                 {{ roomInfo.name }}
               </v-card-title>
               
-              <v-card-subtitle class="text-h6 mt-2">
-                {{ roomInfo.location }} | 容量: {{ roomInfo.capacity }}人
-              </v-card-subtitle>
+
 
               <v-card-text>
                 <div class="text-h5 mb-4">今日会议安排</div>
@@ -36,11 +34,11 @@
                     small
                   >
                     <template v-slot:opposite>
-                      <span class="text-h6">{{ meeting.timeSlots }}</span>
+                      <span class="text-h6">{{ meeting.timeSlots || (meeting.time_start + '-' + meeting.time_end) }}</span>
                     </template>
                     <v-card :color="getMeetingStatus(meeting) === 'current' ? 'green lighten-4' : ''">
-                      <v-card-title class="text-h6">{{ meeting.reason }}</v-card-title>
-                      <v-card-subtitle>预定人: {{ meeting.user }}</v-card-subtitle>
+                      <v-card-title class="text-h6">{{ meeting.reason || meeting.topic }}</v-card-title>
+                      <v-card-subtitle>预定人: {{ meeting.user_name || meeting.user || '未知用户' }}</v-card-subtitle>
                       <v-card-text v-if="getMeetingStatus(meeting) === 'current'">
                         <v-chip color="green" small>进行中</v-chip>
                       </v-card-text>
@@ -139,15 +137,49 @@
       </v-container>
 
       <!-- 成功提示对话框 -->
-      <v-dialog v-model="showSuccessDialog" max-width="400" persistent>
+      <v-dialog v-model="showSuccessDialog" max-width="500" persistent>
         <v-card class="text-center pa-4">
           <v-icon size="80" color="green" class="mb-4">mdi-check-circle</v-icon>
           <v-card-title class="text-h5 justify-center mb-2">
             签到成功！
           </v-card-title>
-          <v-card-text class="text-h6">
-            欢迎 {{ recognizedUser }}！<br>
-            门已开启，请进入会议室。
+          <v-card-text>
+            <div class="text-h6 mb-3">
+              欢迎 {{ recognizedUser }}！
+            </div>
+            <v-divider class="mb-3"></v-divider>
+            <div v-if="checkinDetails" class="text-left">
+              <v-row dense>
+                <v-col cols="6">
+                  <strong>会议主题：</strong>
+                </v-col>
+                <v-col cols="6">
+                  {{ checkinDetails.meetingTopic || '未知会议' }}
+                </v-col>
+                <v-col cols="6">
+                  <strong>会议室：</strong>
+                </v-col>
+                <v-col cols="6">
+                  {{ checkinDetails.roomName || roomInfo.name }}
+                </v-col>
+                <v-col cols="6">
+                  <strong>签到时间：</strong>
+                </v-col>
+                <v-col cols="6">
+                  {{ checkinDetails.checkinTime || new Date().toLocaleString() }}
+                </v-col>
+                <v-col cols="6" v-if="checkinDetails.recognitionScore">
+                  <strong>识别分数：</strong>
+                </v-col>
+                <v-col cols="6" v-if="checkinDetails.recognitionScore">
+                  {{ checkinDetails.recognitionScore }}%
+                </v-col>
+              </v-row>
+            </div>
+            <v-divider class="my-3"></v-divider>
+            <div class="text-h6 green--text">
+              门已开启，请进入会议室。
+            </div>
           </v-card-text>
           <v-card-actions class="justify-center">
             <v-btn color="green" large @click="closeSuccessDialog">
@@ -173,17 +205,22 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { getRoomById } from '@/api/roomService.js'
+import { getMeetingsByRoom } from '@/api/meetingService.js'
+import { getUserById } from '@/api/userService.js'
+import { API_ENDPOINTS } from '@/api/config.js'
+import { TERMINAL_CONFIG } from '@/config/terminal.js'
 
 const route = useRoute()
-const roomId = route.params.roomId
+const roomId = parseInt(route.params.roomId)
 
 // 响应式数据
 const currentTime = ref('')
 const roomInfo = ref({
   id: roomId,
-  name: '会议室A',
-  location: 'A栋101',
-  capacity: 10
+  name: '加载中...',
+  location: '加载中...',
+  capacity: 0
 })
 
 const todayMeetings = ref([])
@@ -196,10 +233,11 @@ const recognizedUser = ref('')
 const showSuccessDialog = ref(false)
 const showErrorSnackbar = ref(false)
 const errorMessage = ref('')
+const checkinDetails = ref(null) // 签到详细信息
 
 // 摄像头尺寸
-const cameraWidth = 320
-const cameraHeight = 240
+const cameraWidth = TERMINAL_CONFIG.CAMERA.WIDTH
+const cameraHeight = TERMINAL_CONFIG.CAMERA.HEIGHT
 
 // 计算属性
 const getStatusText = () => {
@@ -215,8 +253,22 @@ const getMeetingStatus = (meeting) => {
   const today = now.toISOString().split('T')[0]
   const currentTime = now.getHours() * 60 + now.getMinutes()
   
-  if (meeting.date === today) {
-    const [startTime, endTime] = meeting.timeSlots.split('-')
+  // 兼容不同的日期字段格式
+  const meetingDate = meeting.date || today
+  
+  if (meetingDate === today) {
+    let startTime, endTime
+    
+    // 兼容不同的时间字段格式
+    if (meeting.timeSlots) {
+      [startTime, endTime] = meeting.timeSlots.split('-')
+    } else if (meeting.time_start && meeting.time_end) {
+      startTime = meeting.time_start
+      endTime = meeting.time_end
+    } else {
+      return 'past'
+    }
+    
     const [startHour, startMin] = startTime.split(':').map(Number)
     const [endHour, endMin] = endTime.split(':').map(Number)
     const meetingStart = startHour * 60 + startMin
@@ -245,19 +297,57 @@ const updateTime = () => {
 }
 
 // 加载今日会议
-const loadTodayMeetings = () => {
-  const bookings = JSON.parse(localStorage.getItem('myBookings') || '[]')
-  const today = new Date().toISOString().split('T')[0]
-  
-  todayMeetings.value = bookings.filter(booking => 
-    booking.roomId === roomId && 
-    booking.date === today &&
-    (booking.status === '已通过' || booking.status === 'approved')
-  ).sort((a, b) => {
-    const timeA = a.timeSlots.split('-')[0]
-    const timeB = b.timeSlots.split('-')[0]
-    return timeA.localeCompare(timeB)
-  })
+const loadTodayMeetings = async () => {
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    
+    const meetings = await getMeetingsByRoom(roomId, today)
+    
+    // 过滤已通过的会议
+    const filteredMeetings = meetings
+      .filter(meeting => meeting.status === '已通过' || meeting.status === 'approved')
+    
+    // 为每个会议获取用户名
+    const meetingsWithUserNames = await Promise.all(
+      filteredMeetings.map(async (meeting) => {
+        try {
+          const userData = await getUserById(meeting.user_id)
+          return {
+            ...meeting,
+            user_name: userData.username || '未知用户'
+          }
+        } catch (error) {
+          return {
+            ...meeting,
+            user_name: '未知用户'
+          }
+        }
+      })
+    )
+    
+    // 按时间排序
+    todayMeetings.value = meetingsWithUserNames.sort((a, b) => {
+      const timeA = a.time_start || a.timeSlots?.split('-')[0] || ''
+      const timeB = b.time_start || b.timeSlots?.split('-')[0] || ''
+      return timeA.localeCompare(timeB)
+    })
+  } catch (error) {
+    console.error('加载今日会议失败:', error)
+    // 如果API调用失败，尝试从localStorage获取数据作为备用
+    const bookings = JSON.parse(localStorage.getItem('myBookings') || '[]')
+    const today = new Date().toISOString().split('T')[0]
+    
+    todayMeetings.value = bookings.filter(booking => 
+      parseInt(booking.roomId) === roomId && 
+      booking.date === today &&
+      (booking.status === '已通过' || booking.status === 'approved')
+    ).sort((a, b) => {
+      // 兼容localStorage中的timeSlots字段
+      const timeA = a.time_start || a.timeSlots?.split('-')[0] || ''
+      const timeB = b.time_start || b.timeSlots?.split('-')[0] || ''
+      return timeA.localeCompare(timeB)
+    })
+  }
 }
 
 // 初始化摄像头
@@ -267,7 +357,7 @@ const initCamera = async () => {
       video: { 
         width: cameraWidth, 
         height: cameraHeight,
-        facingMode: 'user'
+        facingMode: TERMINAL_CONFIG.CAMERA.FACING_MODE
       } 
     })
     
@@ -296,7 +386,7 @@ const startFaceRecognition = async () => {
     const ctx = canvas.getContext('2d')
     
     ctx.drawImage(video, 0, 0, cameraWidth, cameraHeight)
-    const imageData = canvas.toDataURL('image/jpeg', 0.8)
+    const imageData = canvas.toDataURL('image/jpeg', TERMINAL_CONFIG.CAMERA.QUALITY)
     
     // 模拟调用后端人脸识别API
     const result = await mockFaceRecognition(imageData)
@@ -304,12 +394,20 @@ const startFaceRecognition = async () => {
     if (result.success) {
       recognitionResult.value = 'success'
       recognizedUser.value = result.userName
+      checkinDetails.value = result
       
       // 延迟显示成功对话框
       setTimeout(() => {
         showSuccessDialog.value = true
         // 模拟开门
         console.log('门已开启')
+        
+        // 自动关闭成功对话框
+        setTimeout(() => {
+          if (showSuccessDialog.value) {
+            closeSuccessDialog()
+          }
+        }, TERMINAL_CONFIG.UI.SUCCESS_DIALOG_DURATION)
       }, 1000)
     } else {
       recognitionResult.value = 'failed'
@@ -326,21 +424,25 @@ const startFaceRecognition = async () => {
   }
 }
 
-// 模拟人脸识别API调用
-const mockFaceRecognition = async (imageData) => {
+// 模拟识别结果函数（开发模式使用）
+const mockRecognitionResult = async () => {
   // 模拟API调用延迟
   await new Promise(resolve => setTimeout(resolve, 2000))
   
-  // 模拟识别结果（实际应该调用后端API）
+  // 模拟识别结果
   const users = JSON.parse(localStorage.getItem('users_data') || '[]')
   const randomUser = users[Math.floor(Math.random() * users.length)]
   
-  // 70%的成功率模拟
-  if (Math.random() > 0.3 && randomUser) {
+  // 使用配置的成功率
+  if (Math.random() < TERMINAL_CONFIG.DEVELOPMENT.MOCK_SUCCESS_RATE && randomUser) {
     return {
       success: true,
-      userName: randomUser.name,
-      userId: randomUser.id
+      userName: randomUser.name || randomUser.username || '测试用户',
+      userId: randomUser.id,
+      meetingTopic: '测试会议',
+      roomName: roomInfo.value.name,
+      checkinTime: new Date().toLocaleString(),
+      recognitionScore: Math.floor(Math.random() * 20) + 80 // 80-100分
     }
   } else {
     return {
@@ -350,24 +452,131 @@ const mockFaceRecognition = async (imageData) => {
   }
 }
 
+// 真实人脸识别API调用
+const mockFaceRecognition = async (imageData) => {
+  try {
+    // 使用配置文件中的访问令牌
+     const token = TERMINAL_CONFIG.BAIDU_API.ACCESS_TOKEN
+    
+    if (!token) {
+      console.warn('请配置百度API访问令牌')
+      // 如果是开发模式且启用了模拟，返回模拟数据
+      if (TERMINAL_CONFIG.DEVELOPMENT.ENABLE_MOCK) {
+        return await mockRecognitionResult()
+      }
+      return {
+        success: false,
+        message: '请配置百度API访问令牌'
+      }
+    }
+    
+    // 提取base64数据（去除data:image/jpeg;base64,前缀）
+    const base64Data = imageData.split(',')[1]
+    
+    const response = await fetch(API_ENDPOINTS.FACE_CHECKIN, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        image: base64Data,
+        access_token: token
+      })
+    })
+    
+    const result = await response.json()
+    
+    // 添加详细的错误日志
+    if (!response.ok) {
+      console.error('API请求失败:', {
+        status: response.status,
+        statusText: response.statusText,
+        result: result
+      })
+    }
+    
+    if (result.success) {
+      return {
+        success: true,
+        userName: result.data.username,
+        userId: result.data.user_id,
+        meetingTopic: result.data.meeting_topic,
+        roomName: result.data.room_name,
+        checkinTime: result.data.checkin_time,
+        recognitionScore: result.data.recognition_score
+      }
+    } else {
+      // 返回更详细的错误信息
+      let errorMessage = result.message || '人脸识别失败'
+      if (result.error_code) {
+        errorMessage += ` (错误代码: ${result.error_code})`
+      }
+      if (result.error_msg) {
+        errorMessage += ` - ${result.error_msg}`
+      }
+      if (result.baidu_error) {
+        errorMessage += ` - 百度API错误: ${result.baidu_error}`
+      }
+      
+      return {
+        success: false,
+        message: errorMessage
+      }
+    }
+  } catch (error) {
+    console.error('人脸识别API调用失败:', error)
+    return {
+      success: false,
+      message: '网络请求失败，请检查服务器连接'
+    }
+  }
+}
+
 // 关闭成功对话框
 const closeSuccessDialog = () => {
   showSuccessDialog.value = false
   recognitionResult.value = null
+  checkinDetails.value = null
 }
 
 // 定时器
 let timeInterval = null
 let meetingInterval = null
 
-onMounted(() => {
+// 加载会议室信息
+const loadRoomInfo = async () => {
+  try {
+    const roomData = await getRoomById(roomId)
+    
+    roomInfo.value = {
+      id: roomId,
+      name: roomData.name || `会议室${roomId}`,
+      location: roomData.location || '未知位置',
+      capacity: roomData.capacity || 0
+    }
+  } catch (error) {
+    console.error('加载会议室信息失败:', error)
+    // 使用默认信息
+    roomInfo.value = {
+      id: roomId,
+      name: `会议室${roomId}`,
+      location: '未知位置',
+      capacity: 10
+    }
+  }
+};
+
+onMounted(async () => {
+  // 加载会议室信息
+  await loadRoomInfo()
+  
   // 更新时间
   updateTime()
   timeInterval = setInterval(updateTime, 1000)
   
   // 加载会议数据
-  loadTodayMeetings()
-  meetingInterval = setInterval(loadTodayMeetings, 30000) // 每30秒刷新一次
+  await loadTodayMeetings()
+  meetingInterval = setInterval(loadTodayMeetings, TERMINAL_CONFIG.UI.MEETING_REFRESH_INTERVAL)
   
   // 初始化摄像头
   initCamera()

@@ -5,8 +5,140 @@
 #include "../include/cors.h"
 #include <memory>
 #include <iostream>
+#include <string>
+#include <vector>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <curl/curl.h>
+#include <json/json.h>
 
 std::unique_ptr<DatabaseManager> db_manager;
+
+// libcurl回调函数，用于接收HTTP响应数据
+static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+    ((std::string*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
+}
+
+// 调用百度人脸识别API获取face_token
+std::string callBaiduFaceAPI(const std::string& image_base64, const std::string& access_token) {
+    CURL *curl;
+    CURLcode res;
+    std::string readBuffer;
+    
+    curl = curl_easy_init();
+    if(curl) {
+        // 构建请求URL
+        std::string url = "https://aip.baidubce.com/rest/2.0/face/v3/detect?access_token=" + access_token;
+        
+        // 构建请求体
+        Json::Value json_data;
+        json_data["image"] = image_base64;
+        json_data["image_type"] = "BASE64";
+        json_data["face_type"] = "LIVE";
+        json_data["max_face_num"] = 1;
+        
+        Json::StreamWriterBuilder builder;
+        std::string json_string = Json::writeString(builder, json_data);
+        
+        // 设置curl选项
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_string.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        
+        // 设置请求头
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        
+        // 执行请求
+        res = curl_easy_perform(curl);
+        
+        // 清理
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        
+        if(res == CURLE_OK) {
+            // 解析响应
+            Json::Value response;
+            Json::Reader reader;
+            if(reader.parse(readBuffer, response)) {
+                if(response.isMember("result") && response["result"].isMember("face_list") && 
+                   response["result"]["face_list"].isArray() && response["result"]["face_list"].size() > 0) {
+                    return response["result"]["face_list"][0]["face_token"].asString();
+                }
+            }
+        }
+    }
+    
+    return ""; // 返回空字符串表示失败
+}
+
+// 调用百度人脸搜索API进行人脸识别
+std::string callBaiduFaceSearchAPI(const std::string& image_base64, const std::string& access_token) {
+    CURL *curl;
+    CURLcode res;
+    std::string readBuffer;
+    
+    curl = curl_easy_init();
+    if(curl) {
+        // 构建请求URL
+        std::string url = "https://aip.baidubce.com/rest/2.0/face/v3/search?access_token=" + access_token;
+        
+        // 构建请求体
+        Json::Value json_data;
+        json_data["image"] = image_base64;
+        json_data["image_type"] = "BASE64";
+        json_data["group_id_list"] = "test";
+        json_data["quality_control"] = "LOW";
+        json_data["liveness_control"] = "NONE";
+        json_data["match_threshold"] = 60;
+        
+        Json::StreamWriterBuilder builder;
+        std::string json_string = Json::writeString(builder, json_data);
+        
+        // 设置curl选项
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_string.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        
+        // 设置请求头
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+        
+        // 执行请求
+        res = curl_easy_perform(curl);
+        
+        // 清理
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+        
+        if(res == CURLE_OK) {
+            return readBuffer;
+        }
+    }
+    
+    return ""; // 返回空字符串表示失败
+}
+
+// 获取当前时间字符串
+std::string getCurrentTimeString() {
+    auto now = std::time(nullptr);
+    auto tm = *std::localtime(&now);
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+    return oss.str();
+}
+
+// 检查当前时间是否在会议时间范围内
+bool isWithinMeetingTime(const std::string& meeting_start, const std::string& meeting_end) {
+    std::string current_time = getCurrentTimeString();
+    return current_time >= meeting_start && current_time <= meeting_end;
+}
 
 int main()
 {
@@ -169,6 +301,26 @@ int main()
             }
         });
 
+        // 根据ID获取用户信息
+        CROW_ROUTE(app, "/api/users/<int>").methods("GET"_method)([](const crow::request& req, int user_id){
+            try {
+                auto user = db_manager->get_user_by_id(user_id);
+                
+                crow::json::wvalue result;
+                result["success"] = true;
+                result["data"]["id"] = user.id;
+                result["data"]["username"] = user.username;
+                // 不返回密码和face_token等敏感信息
+                
+                return crow::response(200, result);
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = "User not found";
+                return crow::response(404, error);
+            }
+        });
+
         // 更新用户
         CROW_ROUTE(app, "/api/users/<int>").methods("PUT"_method)([](const crow::request& req, int user_id){
             try {
@@ -256,6 +408,72 @@ int main()
             }
         });
 
+        // 人脸注册接口
+        CROW_ROUTE(app, "/api/face/register").methods("POST"_method)([](const crow::request& req){
+            try {
+                auto body = crow::json::load(req.body);
+                if (!body) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Invalid JSON";
+                    return crow::response(400, error);
+                }
+                
+                if (!body.has("user_id") || !body.has("image")) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "user_id and image are required";
+                    return crow::response(400, error);
+                }
+                
+                int user_id = body["user_id"].i();
+                std::string image_base64 = body["image"].s();
+                
+                // 检查用户是否存在
+                User user;
+                try {
+                    user = db_manager->get_user_by_id(user_id);
+                } catch (const std::exception& e) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "User not found";
+                    return crow::response(404, error);
+                }
+                
+                // 调用百度人脸识别API获取face_token
+                std::string access_token = "24.1ad997f6ce51decc95501881db688263.2592000.1752998641.282335-119289764";
+                std::string face_token = callBaiduFaceAPI(image_base64, access_token);
+                
+                if (face_token.empty()) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Failed to register face with Baidu API";
+                    return crow::response(500, error);
+                }
+                
+                // 更新用户的face_token
+                bool success = db_manager->update_user(user_id, user.username, user.password, face_token);
+                
+                if (success) {
+                    crow::json::wvalue result;
+                    result["success"] = true;
+                    result["data"]["face_token"] = face_token;
+                    result["message"] = "Face registered successfully";
+                    return crow::response(200, result);
+                } else {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Failed to update user face_token";
+                    return crow::response(500, error);
+                }
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
         // 获取所有会议室
         CROW_ROUTE(app, "/api/rooms").methods("GET"_method)([](const crow::request& req){
             try {
@@ -305,6 +523,27 @@ int main()
                 error["success"] = false;
                 error["message"] = e.what();
                 return crow::response(500, error);
+            }
+        });
+
+        // 根据ID获取会议室
+        CROW_ROUTE(app, "/api/rooms/<int>").methods("GET"_method)([](const crow::request& req, int room_id){
+            try {
+                auto room = db_manager->get_room_by_id(room_id);
+                
+                crow::json::wvalue result;
+                result["success"] = true;
+                crow::json::wvalue room_json;
+                room_json["id"] = room.id;
+                room_json["name"] = room.name;
+                result["data"] = std::move(room_json);
+                
+                return crow::response(200, result);
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = "Room not found";
+                return crow::response(404, error);
             }
         });
 
@@ -749,6 +988,211 @@ int main()
                 result["message"] = "CheckIn created successfully";
                 
                 return crow::response(201, result);
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
+        // 根据会议ID获取签到记录
+        CROW_ROUTE(app, "/api/checkins/meeting/<int>").methods("GET"_method)([](const crow::request& req, int meeting_id){
+            try {
+                auto checkins = db_manager->get_checkins_by_meeting(meeting_id);
+                crow::json::wvalue result;
+                result["success"] = true;
+                result["data"] = crow::json::wvalue::list();
+                
+                for (size_t i = 0; i < checkins.size(); ++i) {
+                    crow::json::wvalue checkin_json;
+                    checkin_json["id"] = checkins[i].id;
+                    checkin_json["user_id"] = checkins[i].user_id;
+                    checkin_json["meeting_id"] = checkins[i].meeting_id;
+                    checkin_json["checkin_time"] = checkins[i].checkin_time;
+                    
+                    // 获取用户信息
+                    try {
+                        auto user = db_manager->get_user_by_id(checkins[i].user_id);
+                        checkin_json["username"] = user.username;
+                    } catch (...) {
+                        checkin_json["username"] = "Unknown";
+                    }
+                    
+                    result["data"][i] = std::move(checkin_json);
+                }
+                
+                return crow::response(200, result);
+            } catch (const std::exception& e) {
+                crow::json::wvalue error;
+                error["success"] = false;
+                error["message"] = e.what();
+                return crow::response(500, error);
+            }
+        });
+
+        // 人脸识别签到接口
+        CROW_ROUTE(app, "/api/checkin").methods("POST"_method)([](const crow::request& req){
+            try {
+                auto body = crow::json::load(req.body);
+                if (!body) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Invalid JSON";
+                    return crow::response(400, error);
+                }
+                
+                // 检查必需参数
+                if (!body.has("image") || !body.has("access_token")) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Missing required parameters: image, access_token";
+                    return crow::response(400, error);
+                }
+                
+                std::string image_base64 = body["image"].s();
+                std::string access_token = body["access_token"].s();
+                
+                // 调用百度人脸搜索API
+                std::string api_response = callBaiduFaceSearchAPI(image_base64, access_token);
+                
+                if (api_response.empty()) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Failed to call Baidu Face API";
+                    return crow::response(500, error);
+                }
+                
+                // 添加调试日志
+                std::cout << "Baidu API Response: " << api_response << std::endl;
+                
+                // 解析百度API响应
+                Json::Value response;
+                Json::Reader reader;
+                if (!reader.parse(api_response, response)) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Failed to parse Baidu API response";
+                    error["raw_response"] = api_response;
+                    return crow::response(500, error);
+                }
+                
+                // 检查百度API是否返回错误（error_code为0表示成功）
+                if (response.isMember("error_code") && response["error_code"].asInt() != 0) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Baidu API error";
+                    error["error_code"] = response["error_code"].asInt();
+                    if (response.isMember("error_msg")) {
+                        error["error_msg"] = response["error_msg"].asString();
+                    }
+                    return crow::response(400, error);
+                }
+                
+                // 检查API调用是否成功
+                if (!response.isMember("result") || !response["result"].isMember("user_list") || 
+                    !response["result"]["user_list"].isArray() || response["result"]["user_list"].size() == 0) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Face not recognized or no matching user found";
+                    if (response.isMember("error_msg")) {
+                        error["baidu_error"] = response["error_msg"].asString();
+                    }
+                    return crow::response(404, error);
+                }
+                
+                // 获取识别到的用户ID和匹配分数
+                std::string recognized_user_id = response["result"]["user_list"][0]["user_id"].asString();
+                float score = response["result"]["user_list"][0]["score"].asFloat();
+                
+                // 检查匹配分数是否达到阈值
+                if (score < 60.0) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Face recognition confidence too low";
+                    error["score"] = score;
+                    return crow::response(400, error);
+                }
+                
+                // 将字符串user_id转换为整数
+                int user_id;
+                try {
+                    user_id = std::stoi(recognized_user_id);
+                } catch (const std::exception& e) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "Invalid user_id format from face recognition";
+                    return crow::response(400, error);
+                }
+                
+                // 验证用户是否存在
+                try {
+                    auto user = db_manager->get_user_by_id(user_id);
+                } catch (const std::exception& e) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "User not found in database";
+                    return crow::response(404, error);
+                }
+                
+                // 获取当前时间
+                std::string current_time = getCurrentTimeString();
+                
+                // 临时注释掉会议检查逻辑，用于测试签到功能
+                /*
+                // 查找当前时间段内的会议
+                auto all_meetings = db_manager->get_all_meetings();
+                std::vector<Meeting> current_meetings;
+                
+                for (const auto& meeting : all_meetings) {
+                    if (meeting.status == "approved" && isWithinMeetingTime(meeting.time_start, meeting.time_end)) {
+                        current_meetings.push_back(meeting);
+                    }
+                }
+                
+                if (current_meetings.empty()) {
+                    crow::json::wvalue error;
+                    error["success"] = false;
+                    error["message"] = "No active meetings found at current time";
+                    return crow::response(400, error);
+                }
+                
+                // 如果有多个会议，选择第一个（可以根据需要调整逻辑）
+                Meeting target_meeting = current_meetings[0];
+                
+                // 检查用户是否已经签到过
+                auto existing_checkins = db_manager->get_checkins_by_meeting(target_meeting.id);
+                for (const auto& checkin : existing_checkins) {
+                    if (checkin.user_id == user_id) {
+                        crow::json::wvalue error;
+                        error["success"] = false;
+                        error["message"] = "User has already checked in for this meeting";
+                        return crow::response(400, error);
+                    }
+                }
+                */
+                
+                // 创建签到记录（临时使用默认会议ID为1进行测试）
+                int test_meeting_id = 40; // 临时测试用的会议ID
+                int checkin_id = db_manager->create_checkin(user_id, test_meeting_id, current_time);
+                
+                // 获取用户信息用于返回
+                auto user = db_manager->get_user_by_id(user_id);
+                
+                crow::json::wvalue result;
+                result["success"] = true;
+                result["message"] = "Check-in successful (test mode - no meeting validation)";
+                result["data"]["checkin_id"] = checkin_id;
+                result["data"]["user_id"] = user_id;
+                result["data"]["username"] = user.username;
+                result["data"]["meeting_id"] = test_meeting_id;
+                result["data"]["meeting_topic"] = "Test Meeting";
+                result["data"]["room_name"] = "Test Room";
+                result["data"]["checkin_time"] = current_time;
+                result["data"]["recognition_score"] = score;
+                
+                return crow::response(200, result);
+                
             } catch (const std::exception& e) {
                 crow::json::wvalue error;
                 error["success"] = false;

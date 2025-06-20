@@ -1,5 +1,38 @@
 import { API_ENDPOINTS } from './config.js';
 
+// 人脸注册
+export const registerFace = async (userId, imageBase64) => {
+  try {
+    const response = await fetch(API_ENDPOINTS.FACE_REGISTER, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        user_id: userId, 
+        image: imageBase64 
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || errorData.error || '人脸注册失败');
+    }
+
+    const result = await response.json();
+    
+    // 检查响应格式
+    if (result.success) {
+      return result;
+    } else {
+      throw new Error(result.message || '人脸注册失败');
+    }
+  } catch (error) {
+    console.error('人脸注册失败:', error);
+    throw error;
+  }
+};
+
 // 用户登录
 export const loginUser = async (username, password) => {
   try {
@@ -19,6 +52,29 @@ export const loginUser = async (username, password) => {
     return await response.json();
   } catch (error) {
     console.error('登录请求失败:', error);
+    throw error;
+  }
+};
+
+// 根据ID获取用户信息
+export const getUserById = async (userId) => {
+  try {
+    const response = await fetch(API_ENDPOINTS.USER_BY_ID(userId));
+    
+    if (!response.ok) {
+      throw new Error('获取用户信息失败');
+    }
+
+    const result = await response.json();
+    
+    // 检查响应格式并返回用户数据
+    if (result.success && result.data) {
+      return result.data;
+    } else {
+      throw new Error(result.message || '获取用户信息失败');
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
     throw error;
   }
 };

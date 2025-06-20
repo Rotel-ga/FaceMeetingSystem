@@ -759,6 +759,7 @@ CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj: D:/Cpp\ Project/FaceMeetingSy
   D:/msys64/mingw64/include/c++/15.1.0/bits/stl_raw_storage_iter.h \
   D:/msys64/mingw64/include/c++/15.1.0/bits/stl_relops.h \
   D:/msys64/mingw64/include/c++/15.1.0/bits/stl_set.h \
+  D:/msys64/mingw64/include/c++/15.1.0/bits/stl_stack.h \
   D:/msys64/mingw64/include/c++/15.1.0/bits/stl_tempbuf.h \
   D:/msys64/mingw64/include/c++/15.1.0/bits/stl_tree.h \
   D:/msys64/mingw64/include/c++/15.1.0/bits/stl_uninitialized.h \
@@ -841,6 +842,7 @@ CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj: D:/Cpp\ Project/FaceMeetingSy
   D:/msys64/mingw64/include/c++/15.1.0/ratio \
   D:/msys64/mingw64/include/c++/15.1.0/set \
   D:/msys64/mingw64/include/c++/15.1.0/sstream \
+  D:/msys64/mingw64/include/c++/15.1.0/stack \
   D:/msys64/mingw64/include/c++/15.1.0/stdexcept \
   D:/msys64/mingw64/include/c++/15.1.0/stdlib.h \
   D:/msys64/mingw64/include/c++/15.1.0/streambuf \
@@ -896,6 +898,16 @@ CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj: D:/Cpp\ Project/FaceMeetingSy
   D:/msys64/mingw64/include/corecrt_wstdlib.h \
   D:/msys64/mingw64/include/crtdefs.h \
   D:/msys64/mingw64/include/ctype.h \
+  D:/msys64/mingw64/include/curl/curl.h \
+  D:/msys64/mingw64/include/curl/curlver.h \
+  D:/msys64/mingw64/include/curl/easy.h \
+  D:/msys64/mingw64/include/curl/header.h \
+  D:/msys64/mingw64/include/curl/mprintf.h \
+  D:/msys64/mingw64/include/curl/multi.h \
+  D:/msys64/mingw64/include/curl/options.h \
+  D:/msys64/mingw64/include/curl/system.h \
+  D:/msys64/mingw64/include/curl/urlapi.h \
+  D:/msys64/mingw64/include/curl/websockets.h \
   D:/msys64/mingw64/include/datetimeapi.h \
   D:/msys64/mingw64/include/debugapi.h \
   D:/msys64/mingw64/include/driverspecs.h \
@@ -913,9 +925,19 @@ CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj: D:/Cpp\ Project/FaceMeetingSy
   D:/msys64/mingw64/include/in6addr.h \
   D:/msys64/mingw64/include/inaddr.h \
   D:/msys64/mingw64/include/interlockedapi.h \
+  D:/msys64/mingw64/include/inttypes.h \
   D:/msys64/mingw64/include/io.h \
   D:/msys64/mingw64/include/ioapiset.h \
   D:/msys64/mingw64/include/jobapi.h \
+  D:/msys64/mingw64/include/json/allocator.h \
+  D:/msys64/mingw64/include/json/config.h \
+  D:/msys64/mingw64/include/json/forwards.h \
+  D:/msys64/mingw64/include/json/json.h \
+  D:/msys64/mingw64/include/json/json_features.h \
+  D:/msys64/mingw64/include/json/reader.h \
+  D:/msys64/mingw64/include/json/value.h \
+  D:/msys64/mingw64/include/json/version.h \
+  D:/msys64/mingw64/include/json/writer.h \
   D:/msys64/mingw64/include/ktmtypes.h \
   D:/msys64/mingw64/include/libloaderapi.h \
   D:/msys64/mingw64/include/limits.h \
@@ -1202,8 +1224,6 @@ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/cmpccxaddintrin.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/clwbintrin.h:
 
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/cetintrin.h:
-
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/bmi2intrin.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avxvnniint16intrin.h:
@@ -1215,8 +1235,6 @@ D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avxintrin.h:
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avxifmaintrin.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512vp2intersectintrin.h:
-
-D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512vnnivlintrin.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512vnniintrin.h:
 
@@ -1300,8 +1318,6 @@ D:/msys64/mingw64/include/ws2def.h:
 
 D:/msys64/mingw64/include/sec_api/string_s.h:
 
-D:/msys64/mingw64/include/sdkddkver.h:
-
 D:/msys64/mingw64/include/sal.h:
 
 D:/msys64/mingw64/include/realtimeapiset.h:
@@ -1329,6 +1345,14 @@ D:/msys64/mingw64/include/namedpipeapi.h:
 D:/msys64/mingw64/include/mswsock.h:
 
 D:/msys64/mingw64/include/libloaderapi.h:
+
+D:/msys64/mingw64/include/json/version.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512vnnivlintrin.h:
+
+D:/msys64/mingw64/include/json/value.h:
+
+D:/msys64/mingw64/include/json/allocator.h:
 
 D:/msys64/mingw64/include/ioapiset.h:
 
@@ -1361,6 +1385,24 @@ D:/msys64/mingw64/include/errhandlingapi.h:
 D:/msys64/mingw64/include/driverspecs.h:
 
 D:/msys64/mingw64/include/datetimeapi.h:
+
+D:/msys64/mingw64/include/sdkddkver.h:
+
+D:/msys64/mingw64/include/curl/urlapi.h:
+
+D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/cetintrin.h:
+
+D:/msys64/mingw64/include/curl/system.h:
+
+D:/msys64/mingw64/include/curl/multi.h:
+
+D:/msys64/mingw64/include/curl/header.h:
+
+D:/msys64/mingw64/include/curl/easy.h:
+
+D:/msys64/mingw64/include/curl/curlver.h:
+
+D:/msys64/mingw64/include/curl/curl.h:
 
 D:/msys64/mingw64/include/consoleapi3.h:
 
@@ -1395,6 +1437,8 @@ D:/msys64/mingw64/include/c++/15.1.0/tr1/riemann_zeta.tcc:
 D:/msys64/mingw64/include/c++/15.1.0/tr1/beta_function.tcc:
 
 D:/msys64/mingw64/include/c++/15.1.0/thread:
+
+D:/msys64/mingw64/include/c++/15.1.0/stack:
 
 D:/msys64/mingw64/include/c++/15.1.0/tr1/exp_integral.tcc:
 
@@ -1453,6 +1497,8 @@ D:/msys64/mingw64/include/c++/15.1.0/bits/unique_lock.h:
 D:/msys64/mingw64/include/c++/15.1.0/bits/this_thread_sleep.h:
 
 D:/msys64/mingw64/include/c++/15.1.0/bits/stream_iterator.h:
+
+D:/msys64/mingw64/include/c++/15.1.0/bits/stl_stack.h:
 
 D:/msys64/mingw64/include/c++/15.1.0/bits/stl_relops.h:
 
@@ -1862,9 +1908,13 @@ D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/detail/impl/strand_execut
 
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/detail/strand_executor_service.hpp:
 
+D:/msys64/mingw64/include/json/reader.h:
+
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/detached.hpp:
 
 D:/msys64/mingw64/include/c++/15.1.0/bits/hashtable.h:
+
+D:/msys64/mingw64/include/inttypes.h:
 
 D:/msys64/mingw64/include/c++/15.1.0/x86_64-w64-mingw32/bits/ctype_base.h:
 
@@ -1882,6 +1932,8 @@ D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/detail/posix_thread.hpp:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/amxint8intrin.h:
 
+D:/msys64/mingw64/include/json/forwards.h:
+
 D:/msys64/mingw64/include/c++/15.1.0/typeinfo:
 
 D:/msys64/mingw64/include/_mingw_unicode.h:
@@ -1897,6 +1949,8 @@ D:/msys64/mingw64/include/c++/15.1.0/system_error:
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/avx512vpopcntdqvlintrin.h:
 
 D:/msys64/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/amxfp16intrin.h:
+
+D:/msys64/mingw64/include/curl/options.h:
 
 D:/msys64/mingw64/include/c++/15.1.0/tr1/poly_laguerre.tcc:
 
@@ -1963,6 +2017,8 @@ D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/detail/timer_queue_base.h
 D:/msys64/mingw64/include/virtdisk.h:
 
 D:/msys64/mingw64/include/vadefs.h:
+
+D:/msys64/mingw64/include/json/json.h:
 
 D:/msys64/mingw64/include/stdarg.h:
 
@@ -2231,6 +2287,8 @@ D:/msys64/mingw64/include/c++/15.1.0/bits/align.h:
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/generic/detail/endpoint.hpp:
 
 D:/msys64/mingw64/include/c++/15.1.0/bits/alloc_traits.h:
+
+D:/msys64/mingw64/include/curl/mprintf.h:
 
 D:/msys64/mingw64/include/bcrypt.h:
 
@@ -2688,6 +2746,8 @@ D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/dispatch.hpp:
 
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/detail/non_const_lvalue.hpp:
 
+D:/msys64/mingw64/include/json/writer.h:
+
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/detail/win_object_handle_service.hpp:
 
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/impl/connect_pipe.ipp:
@@ -2699,6 +2759,8 @@ D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/detail/null_reactor.hpp:
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/detail/operation.hpp:
 
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/detail/posix_fd_set_adapter.hpp:
+
+D:/msys64/mingw64/include/json/json_features.h:
 
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/detail/push_options.hpp:
 
@@ -2864,6 +2926,8 @@ D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/ip/basic_resolver_query.h
 
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/execution/allocator.hpp:
 
+D:/msys64/mingw64/include/json/config.h:
+
 D:/msys64/mingw64/include/c++/15.1.0/new:
 
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/impl/io_context.ipp:
@@ -3019,6 +3083,8 @@ D:/msys64/mingw64/include/stringapiset.h:
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/detail/timer_queue_ptime.hpp:
 
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/ip/basic_resolver.hpp:
+
+D:/msys64/mingw64/include/curl/websockets.h:
 
 D:/Cpp\ Project/FaceMeetingSystem/backend/include/asio/ip/basic_resolver_entry.hpp:
 

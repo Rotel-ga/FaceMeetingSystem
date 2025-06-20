@@ -20,6 +20,11 @@ export const API_ENDPOINTS = {
   // 签到相关API
   CHECKINS: `${API_BASE_URL}/api/checkins`,
   CHECKIN_BY_ID: (id) => `${API_BASE_URL}/api/checkins/${id}`,
+  CHECKINS_BY_MEETING: (meetingId) => `${API_BASE_URL}/api/checkins/meeting/${meetingId}`,
+  FACE_CHECKIN: `${API_BASE_URL}/api/checkin`,
+  
+  // 人脸识别相关API
+  FACE_REGISTER: `${API_BASE_URL}/api/face/register`,
   
   // 管理员会议审核相关API
   ADMIN_MEETINGS: `${API_BASE_URL}/api/admin/meetings`,

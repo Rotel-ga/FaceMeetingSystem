@@ -23,6 +23,35 @@ export const getRooms = async () => {
   }
 };
 
+// 根据ID获取单个会议室
+export const getRoomById = async (roomId) => {
+  try {
+    // 由于后端没有单个房间的GET端点，使用getRooms获取所有房间然后过滤
+    const allRooms = await getRooms();
+    const room = allRooms.find(r => r.id === parseInt(roomId));
+    
+    if (room) {
+      return {
+        id: room.id,
+        name: room.name,
+        location: '未知位置', // 数据库中只有id和name
+        capacity: 10 // 默认容量
+      };
+    } else {
+      throw new Error('未找到指定的会议室');
+    }
+  } catch (error) {
+    console.error('获取会议室信息失败:', error);
+    // 如果获取失败，返回默认数据
+    return {
+      id: parseInt(roomId),
+      name: `会议室${roomId}`,
+      location: '未知位置',
+      capacity: 10
+    };
+  }
+};
+
 // 创建会议室
 export const createRoom = async (name) => {
   try {

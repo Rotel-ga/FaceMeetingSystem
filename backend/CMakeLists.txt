@@ -21,4 +21,6 @@ target_link_libraries(${PROJECT_NAME}
     ssl         # OpenSSL
     crypto      # OpenSSL
     sqlite3     # SQLite3 数据库
+    curl        # libcurl for HTTP requests
+    jsoncpp     # JSON parsing library
 )

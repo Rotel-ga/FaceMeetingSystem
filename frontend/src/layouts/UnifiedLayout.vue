@@ -52,6 +52,13 @@
             value="meetingreview"
             :to="{ name: 'MeetingReview' }"
           ></v-list-item>
+          
+          <v-list-item
+            prepend-icon="mdi-account-check"
+            title="签到管理"
+            value="checkinmanagement"
+            :to="{ name: 'CheckinManagement' }"
+          ></v-list-item>
         </v-list-group>
 
         <!-- 所有用户都可见的菜单 -->

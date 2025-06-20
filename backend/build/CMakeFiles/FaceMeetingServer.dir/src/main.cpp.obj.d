@@ -1047,4 +1047,27 @@ CMakeFiles/FaceMeetingServer.dir/src/main.cpp.obj: \
  D:/Cpp\ Project/FaceMeetingSystem/backend/database/database_manager.h \
  D:/Cpp\ Project/FaceMeetingSystem/backend/include/sqlite_modern_cpp.h \
  D:/msys64/mingw64/include/sqlite3.h \
- D:/Cpp\ Project/FaceMeetingSystem/backend/include/cors.h
+ D:/Cpp\ Project/FaceMeetingSystem/backend/include/cors.h \
+ D:/msys64/mingw64/include/curl/curl.h \
+ D:/msys64/mingw64/include/curl/curlver.h \
+ D:/msys64/mingw64/include/curl/system.h \
+ D:/msys64/mingw64/include/inttypes.h \
+ D:/msys64/mingw64/include/curl/easy.h \
+ D:/msys64/mingw64/include/curl/multi.h \
+ D:/msys64/mingw64/include/curl/curl.h \
+ D:/msys64/mingw64/include/curl/urlapi.h \
+ D:/msys64/mingw64/include/curl/options.h \
+ D:/msys64/mingw64/include/curl/header.h \
+ D:/msys64/mingw64/include/curl/websockets.h \
+ D:/msys64/mingw64/include/curl/mprintf.h \
+ D:/msys64/mingw64/include/json/json.h \
+ D:/msys64/mingw64/include/json/config.h \
+ D:/msys64/mingw64/include/json/allocator.h \
+ D:/msys64/mingw64/include/json/version.h \
+ D:/msys64/mingw64/include/json/json_features.h \
+ D:/msys64/mingw64/include/json/forwards.h \
+ D:/msys64/mingw64/include/json/reader.h \
+ D:/msys64/mingw64/include/json/value.h \
+ D:/msys64/mingw64/include/c++/15.1.0/stack \
+ D:/msys64/mingw64/include/c++/15.1.0/bits/stl_stack.h \
+ D:/msys64/mingw64/include/json/writer.h

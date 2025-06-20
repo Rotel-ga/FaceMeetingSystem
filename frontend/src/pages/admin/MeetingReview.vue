@@ -135,14 +135,13 @@ export default {
   methods: {
     async loadBasicData() {
       try {
-        const [roomsResponse, usersResponse] = await Promise.all([
+        const [roomsData, usersResponse] = await Promise.all([
           getRooms(),
           getUsers()
         ]);
         
-        if (roomsResponse.success) {
-          this.rooms = roomsResponse.data;
-        }
+        // getRooms() 直接返回数据数组
+        this.rooms = roomsData;
         
         if (usersResponse.success) {
           this.users = usersResponse.data;

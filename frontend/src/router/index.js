@@ -48,6 +48,12 @@ const routes = [
         component: () => import('@/pages/admin/MeetingReview.vue'),
         meta: { requiresAuth: true, roles: ['admin'] }
       },
+      {
+        path: 'admin/checkin-management',
+        name: 'CheckinManagement',
+        component: () => import('@/pages/admin/CheckinManagement.vue'),
+        meta: { requiresAuth: true, roles: ['admin'] }
+      },
       // 预定端路由
       {
         path: 'booking/query',

@@ -57,16 +57,18 @@
             </div>
             <v-row>
               <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="roomId"
-                  label="会议室ID"
+                <v-select
+                  v-model="selectedRoom"
+                  :items="rooms"
+                  item-title="displayName"
+                  item-value="id"
+                  label="选择会议室"
                   prepend-icon="mdi-door-closed"
-                  type="number"
-                  min="1"
                   variant="outlined"
-                  hint="请输入要访问的会议室ID"
+                  hint="请选择要访问的会议室"
                   persistent-hint
-                ></v-text-field>
+                  :loading="loadingRooms"
+                ></v-select>
               </v-col>
               <v-col cols="12" md="6" class="d-flex align-center">
                 <v-btn 
@@ -74,7 +76,7 @@
                   @click="openRoomTerminal" 
                   block 
                   large
-                  :disabled="!roomId || roomId < 1"
+                  :disabled="!selectedRoom"
                 >
                   <v-icon left>mdi-tablet</v-icon>
                   打开会议室终端
@@ -89,26 +91,57 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { loginUser } from '@/api/userService.js';
+import { getRooms } from '@/api/roomService.js';
 import logoUrl from '@/assets/logo.svg';
 
 const username = ref('');
 const password = ref('');
 const error = ref('');
 const loading = ref(false);
-const roomId = ref(''); // 新增：会议室ID
+const selectedRoom = ref(''); // 选中的会议室ID
+const rooms = ref([]); // 会议室列表
+const loadingRooms = ref(false); // 加载会议室状态
 const router = useRouter();
 const isLoggedIn = ref(!!localStorage.getItem('user-token'));
 
-// 新增：打开会议室终端的方法
-const openRoomTerminal = () => {
-  if (roomId.value && roomId.value > 0) {
-    // 直接跳转到会议室终端页面
-    router.push({ name: 'RoomTerminal', params: { roomId: roomId.value } });
+// 加载会议室列表
+const loadRooms = async () => {
+  loadingRooms.value = true;
+  try {
+    const roomsData = await getRooms();
+    // 为每个会议室添加displayName属性
+    rooms.value = roomsData.map(room => ({
+      ...room,
+      displayName: room.name
+    }));
+  } catch (err) {
+    console.error('加载会议室错误:', err);
+    // 如果加载失败，使用默认会议室数据
+    rooms.value = [
+      { id: 1, name: '会议室A', location: 'A栋101', capacity: 10, displayName: '会议室A' },
+      { id: 2, name: '会议室B', location: 'A栋102', capacity: 8, displayName: '会议室B' },
+      { id: 3, name: '会议室C', location: 'B栋201', capacity: 15, displayName: '会议室C' }
+    ];
+  } finally {
+    loadingRooms.value = false;
   }
 };
+
+// 打开会议室终端的方法
+const openRoomTerminal = () => {
+  if (selectedRoom.value) {
+    // 直接跳转到会议室终端页面
+    router.push({ name: 'RoomTerminal', params: { roomId: selectedRoom.value } });
+  }
+};
+
+// 组件挂载时加载会议室数据
+onMounted(() => {
+  loadRooms();
+});
 
 const logout = () => {
   localStorage.removeItem('user-token');
