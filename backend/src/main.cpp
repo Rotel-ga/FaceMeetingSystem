@@ -1138,8 +1138,6 @@ int main()
                 // 获取当前时间
                 std::string current_time = getCurrentTimeString();
                 
-                // 临时注释掉会议检查逻辑，用于测试签到功能
-                /*
                 // 查找当前时间段内的会议
                 auto all_meetings = db_manager->get_all_meetings();
                 std::vector<Meeting> current_meetings;
@@ -1170,24 +1168,23 @@ int main()
                         return crow::response(400, error);
                     }
                 }
-                */
                 
-                // 创建签到记录（临时使用默认会议ID为1进行测试）
-                int test_meeting_id = 40; // 临时测试用的会议ID
-                int checkin_id = db_manager->create_checkin(user_id, test_meeting_id, current_time);
+                // 创建签到记录
+                int checkin_id = db_manager->create_checkin(user_id, target_meeting.id, current_time);
                 
                 // 获取用户信息用于返回
                 auto user = db_manager->get_user_by_id(user_id);
+                auto room = db_manager->get_room_by_id(target_meeting.room_id);
                 
                 crow::json::wvalue result;
                 result["success"] = true;
-                result["message"] = "Check-in successful (test mode - no meeting validation)";
+                result["message"] = "Check-in successful";
                 result["data"]["checkin_id"] = checkin_id;
                 result["data"]["user_id"] = user_id;
                 result["data"]["username"] = user.username;
-                result["data"]["meeting_id"] = test_meeting_id;
-                result["data"]["meeting_topic"] = "Test Meeting";
-                result["data"]["room_name"] = "Test Room";
+                result["data"]["meeting_id"] = target_meeting.id;
+                result["data"]["meeting_topic"] = target_meeting.topic;
+                result["data"]["room_name"] = room.name;
                 result["data"]["checkin_time"] = current_time;
                 result["data"]["recognition_score"] = score;
                 

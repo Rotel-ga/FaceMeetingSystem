@@ -203,8 +203,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, onUnmounted, onBeforeUnmount, computed } from 'vue'
+import { useRoute, onBeforeRouteLeave } from 'vue-router'
 import { getRoomById } from '@/api/roomService.js'
 import { getMeetingsByRoom } from '@/api/meetingService.js'
 import { getUserById } from '@/api/userService.js'
@@ -543,6 +543,39 @@ const closeSuccessDialog = () => {
 let timeInterval = null
 let meetingInterval = null
 
+// 摄像头清理函数
+const cleanupCamera = () => {
+  if (videoElement.value && videoElement.value.srcObject) {
+    const tracks = videoElement.value.srcObject.getTracks()
+    tracks.forEach(track => {
+      track.stop()
+      console.log('摄像头轨道已停止:', track.kind)
+    })
+    videoElement.value.srcObject = null
+    cameraReady.value = false
+    console.log('摄像头已完全关闭')
+  }
+}
+
+// 页面可见性变化处理
+const handleVisibilityChange = () => {
+  if (document.hidden) {
+    // 页面隐藏时暂停摄像头
+    cleanupCamera()
+  } else {
+    // 页面显示时重新初始化摄像头
+    setTimeout(() => {
+      initCamera()
+    }, 500)
+  }
+}
+
+// 路由离开前的清理
+onBeforeRouteLeave((to, from, next) => {
+  cleanupCamera()
+  next()
+})
+
 // 加载会议室信息
 const loadRoomInfo = async () => {
   try {
@@ -580,17 +613,31 @@ onMounted(async () => {
   
   // 初始化摄像头
   initCamera()
+  
+  // 监听页面可见性变化
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  
+  // 监听页面卸载事件
+  window.addEventListener('beforeunload', cleanupCamera)
+  window.addEventListener('pagehide', cleanupCamera)
+})
+
+onBeforeUnmount(() => {
+  // 清理摄像头
+  cleanupCamera()
 })
 
 onUnmounted(() => {
   if (timeInterval) clearInterval(timeInterval)
   if (meetingInterval) clearInterval(meetingInterval)
   
-  // 停止摄像头
-  if (videoElement.value && videoElement.value.srcObject) {
-    const tracks = videoElement.value.srcObject.getTracks()
-    tracks.forEach(track => track.stop())
-  }
+  // 移除事件监听器
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('beforeunload', cleanupCamera)
+  window.removeEventListener('pagehide', cleanupCamera)
+  
+  // 确保摄像头完全关闭
+  cleanupCamera()
 })
 </script>
 
